@@ -1,0 +1,66 @@
+These are the tile IDs and modifiers from the columns table in
+The Legend of Zelda's overworld; in the rom, the tables start at
+byte 89048
+
+Modifiers:
+Start: #x80 or #b1000 0000
+Double: #x40 or #b0100 0000
+
+Tiles:
+Stairwell (not naturally in column?): #x12 or #b0001 0010
+Cliff Wall: #x1B or #b0001 1011
+Bombable Wall: #x27 or #b0010 0111
+Bottom Wall: #x1A or #b0001 1010
+Top-Left Wall: #x35 or #b0011 0101
+Top-Right Wall: #x34 or #b0011 0100
+Bottom-Left Wall: #x33 or #b0011 0011
+Bottom-Right Wall: #x32 or #b0011 0010
+Ladder: #x0A or #b0000 1010
+Bush: #x19 or #b0001 1001
+Burnable Bush: #x28 or #b0010 1000
+
+Cave: #x0C or #b0000 1100
+Empty: #x0E or #b0000 1110
+Desert: #x37 or #b0011 0111
+Gray?: #x0D or #b0000 1100
+
+Water: #x05 or #b0000 0101
+Left Water: #x08 or #b0000 1000
+Bottom-Left Water: #x17 or #b0001 0111
+Bottom Water: #x07 or #b0000 0111
+Top-Left Water: #x15 or #b0001 0101
+Right Water: #x09 or #b0000 1001
+Bottom-Right Water: #x18 or #b0001 1000
+Top Water: #x06 or #b0000 0110
+Top-Right Water: #x16 or #b0001 0110
+Waterfall: #x36 or #b0011 0110
+Waterfall Entrance: #x0F or #b0000 1111
+
+Top-Left Shore: #x2E #b0010 1110
+Top-Right Shore: #x2F #b0010 1111
+Bottom-Left Shore: #x30 #b0011 0000
+Bottom-Right Shore: #x31 #b0011 0001
+
+Dock: #x0B or #b0000 1011
+Boulder: #x13 or #b0001 0011
+Moveable Boulder: #x26 or #b0010 0110
+Gravestone: #x14 or #b0001 0100
+Pushable Gravestone: #x29 or #b0010 1001
+Armos: #x2C or #b0010 1100
+Other Armos?: #x2A and #x2B
+
+Dungeon Entrances: 
+Tree:
+Top-Left: #x1C or #b0001 1100
+Bottom-Left: #x1F or #b0001 1111
+Top: #x1D or #b0001 1101
+Top-Right: #x1E or #b0001 1110
+Bottom-Right: #x20 or #b0010 0000
+
+Ruin:
+Top-Left: #x21 or #b0010 0001
+Top (Two-Eye): #x22 or #b0010 0010
+Top-Right: #x23 or #b0010 0011
+Bottom-Left: #x24 or #b0010 0100
+Bottom-Right: #x25 or #b0010 0101
+Top (Cyclops): #x2D or #b0010 1101

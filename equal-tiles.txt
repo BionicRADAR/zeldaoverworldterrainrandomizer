@@ -1,0 +1,36 @@
+Wall: 3d 49 43
+BWall: 29 2f 35
+TLWall: 3E 4A 44
+TRWall: 3C 48 42
+BLWall: 2A 36 30
+BRWall: 28 34 2E
+Ladder: 14 20 1A
+Tree: 15 1B 08
+Empty Space: 02 0E
+Water: 65 6B
+SW Water: 78 7E
+S Water: 79 7F
+W Water: 64 6A
+NW Water: 50 56
+N Water: 51 57
+NE Water: 58 52
+E Water: 6C 66
+SE Water: 80 7A
+NW Shore: 8C 92
+NE Shore: 8D 93
+Dock: 91 97
+Boulder: 01 07
+Armos: 16 1C 22
+Dungeon Entrance:
+TL: 2B 31 37
+TR: 2D 33 39
+BL: 3F 45 4B
+BR: 41 47 4D
+Top (Cyclops): 9C 1E 38
+Top (Two-Eye): 2C 32 96
+Tree Entrance:
+TL: 03 09
+TR: 05 0B
+BL: 17 1D
+BR: 19 1F
+Top: 04 0A

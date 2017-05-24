@@ -1,0 +1,43 @@
+//At the start of the file are four ints:
+mapwidth mapheight screenwidth screenheight
+//mapwidth is the width of the map in screens; similarly for mapheight
+//screenwidth is the width of the screen in tiles; similarly for screenheight
+
+//After this opening, the data for each screen is presented in order from left
+//to right, top to bottom.
+//First, the two palettes for the screen (outer and inner). The
+//available palettes are "brown" "green" and "gray"; at some point "orange"
+//may be available
+//Immediately after the palettes comes info for any special screen entrance
+//that isn't coded directly into the tiles. The two options supported are
+//"recorder" (which adds a staircase to the spot a whistle spot would be)
+//and a coordinate pair (which draws a red square around the tile indicated
+//by the coordinates, intended to be used for armos caves).
+//If neither is in the screen, put any single word that is not a number or
+//"recorder" there; I use "null" as my word of choice.
+//So, forms of specialentrance: "recorder", 
+								xCoord yCoord (like "3 2")
+								"null"
+outerpalette innerpalette specialentrance
+//After the palettes come the IDs for each tile in order from left to right,
+//top to bottom.
+ID ID ID ID
+ID ID ID ID
+//The number of screens and the number of tiles are determined by the widths
+//and heights presented at the start of the file.
+//Line breaks are optional but can help readability; the example file
+//linebreaks at the start of each screen, after the palette info, and at the
+//end of each line.
+
+
+//So, here's how it looks together:
+mapwidth mapheight screenwidth screenheight
+outerpalette innerpalette specialentrance
+ID ID ID ID ID ID ID ID
+ID ID ID ID ID ID ID ID
+ID ID ID ID ID ID ID ID
+outerpalette innerpalette specialentrance
+ID ID ID ID ID ID ID ID
+ID ID ID ID ID ID ID ID
+ID ID ID ID ID ID ID ID
+//etc.

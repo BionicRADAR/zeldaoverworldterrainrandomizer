@@ -1,0 +1,627 @@
+@99504: inner palette of top-left graveyard (C1)
+@99376: outer palette of top-left graveyard (C1)
+87086 & 99344 changed when one column of A1 was changed
+89005 & 99471 changed when one column of H16 was changed
+
+After changed two columns in C1 and flipped outer/inner palettes, these bytes
+changed:
+87577, 87590
+
+87577 and 87590 are 13 apart, the same distance apart as the two columns in C1
+I changed
+
+Likely, for palette: 00 is gray, 01 is orange (unused), 10 is green, 11 is brown
+(All binary; technically those numbers are 0, 1, 2, and 3)
+
+Screens (lists of columns) starts at 87080 (0x15428) in rom
+In this map, screens A9, E3, E4, H11, and H14 are skipped, as they are identical
+to other screens (A9 and H11 to A7, E3 and E4 to D10, and H14 to H13)
+NOTE: Screens 121 and 122 represent cave insides (generic and take-any-road,
+respectively), and should not be changed! Screen 123 is a 2nd-quest only
+screen; it replaces dungeon 2, and is a unique "lake" screen, with a dead tree
+at either side instead of a couple of shrubs to either side. It can safely be
+changed.
+
+The column contents start at 15BE8 in the rom and end at 15FAB; immediately
+following it is the location of the map when the ROM is loaded into RAM, 9418
+(middle-endian)
+In order to change the horizontal river tiles, you must change the following
+locations in the rom:
+15D8D is the start of the first horizontal river column. Its last tiles are
+the start of the next horizontal river column. The previous column ends before
+this one starts. It is the standard "high bottom" river tile.
+15D93 is the start of the second horizontal river column. Its first tiles are
+the start of the previous horizontal river column; it ends before the next
+column starts. It is the standard "low bottom" river tile.
+15E7C is the start of the third horizontal river column; it ends before the
+next column starts, but the previous column shares its last two tiles with
+this river columns first two (they are both rock walls and only take one byte
+in memory, byte 15E7C, which is DB in the original). It is recommended that
+this byte is not changed, as it will make the previous column look out of
+place where it tends to appear. This column is the "south exit" horizontal
+river column (only appears on screen C8 in the original)
+15F0B is the start of the fourth (and final) horizontal river column. It ends
+before the next column starts, and its previous column ends before it starts,
+so its tiles can be safely changed. This is the bombable wall horizontal river
+column; in the second quest, one such column hides level 8.
+
+
+Starting at 99344 (this is stored at 687E in the RAM) is one byte for each map 
+screen, containing data on the outer palette and some other stuff I know now
+Guesses on other map stuff: 8 bits, ABCD EFGH
+G and H are the outer palette
+E is whether or not there is a zora on the screen
+F is whether or not the waves sound plays
+ABCD is the column number into which Link enters if he exits a cave in that
+screen.
+[Notes used while figuring out ABCD: 
+All screens with "0" as the high half-byte have no cave in either quest
+However, at least one screen has no cave in either quest but has a non-zero
+high half-byte
+A9 B8 C5 C11 C15 D3 D6 D7 D9 D10 D15 D16 E1 E2 E4 E13 E16 F1 F3 F5 F6 F8 F10
+F11 F13 F14 F16 G2 G6 G10 H4 H11 H15 H16]
+
+
+Starting at 99472 (immediately after the previous map data) is a similar set
+of map data, containing info on inner palette and something to do with caves
+in the screen; e.g., if a cave goes to a dungeon in either quest, the high
+bits (above the first 2) will, taken as binary, be the dungeon number.
+For example, one such byte is 27 (or 0010 0111); the lowest two bits are 11, which
+corresponds to the inner palette (brown). If you ignore those lowest two, you
+have 001001, which is 9, which is the dungeon number that screen's cave goes
+to when it's open.
+
+
+While running game, map data (lists of columns) appear starting at address
+9418 in PRG-ROM section of RAM; the columns themselves are stored immediately
+afterward at 9bd8 and end at 9f9b
+
+When loading a new screen, the program looks at data at 9f9c, immediately
+after the columns; 9F9C-D contains the start of the columns lists (9418)
+
+In order to know which screen to load, the program looks at data stored in
+SRAM (the 6000-8000 block); starting at 69FE is a series of 128 bytes (one for
+each map position). The lower 7 bits of each byte represents which screen
+offset to load (so, for example, the first one is 00, screen 00's column list
+is 0 away from the start of the columns). Here, duplicate screens have the
+values associated with older screens (so 06 appears a couple times).
+The top bit has to do with whether or not mixed enemies appear on that screen.
+If they do, the bit is set; if the enemies are all of the same type, it is not
+set.
+Exploring the top bit:
+The top bit means something special, though what exactly I'm not yet sure. It
+probably has something to do with caves/items taken/quest number
+These values appear at 18590-60F in the rom, which is probably initial save
+conditions
+
+Top bit:
+Screens in rom with top bit:
+A6, A7, B2, B4, B6, C12, C14, D3, D9, D11, D15, E10, E13, E16, F3, F4, F5, F8,
+F9, F12, F16, G1, G4, G5, G6, G7, G11, G12, G15, G16, H3, H6
+Screens in current RAM with top bit:
+A6, A7, B2, B4, B6, C12, C14, D3, D9, D11, D15, E10, E13, E16, F3, F4, F5, F8,
+F9, F12, F16, G1, G4, G5, G6, G7, G11, G12, G15, G16, H3, H6
+These lists are identical
+The top bit has something to do with enemy spawns. When I turned it off on one
+particular screen (2W of start), Instead of the normal enemies, it spawned
+weird glitchy wallmasters which looked like half-blue-armos, half blue
+nonsense garbage
+I'm pretty sure it has to do with mixed enemy sets. Zelda has two options for
+enemies on a screen; either they are all the same, or they include several
+different types of enemies. These two options point to different areas to get
+the enemies (either to one particular enemy, or to a list of "mixed enemy"
+presets). If the program doesn't know to look at mixed enemies, it attempts to
+find a single enemy type to fit the area, but the offset is nonsense for that,
+so it comes up with some glitched enemy nonsense.
+End top bit Exploration
+
+
+
+Screen load subroutine: A9F4
+
+00EB in RAM is Link's current map position
+The lost woods/lost hills is checked in a subroutine starting at 752F in RAM.
+The two are checked in sequence; first, the lost woods are checked
+(instruction 7536, CPY 61), then the lost hills are checked (instruction 7558,
+CPY 1B); it seems that these absolute values are stored right in the code
+here, so the only way to change them is to change executed code. It also
+implies that, should somebody create a two-quest rom, the lost hills and lost
+woods would need to remain the same between the two quests or some bigger
+program changes would need to occur. However, making fewer such screens
+probably wouldn't be too hard, since there are values for which no screen is
+lost (assuming that wouldn't create unfortunate side effects).
+
+Subroutine 752F
+All the following sections deal with code in subroutine 752F, which opens with
+LDX $052F, which loads the X-register with how far Link is through any "secret
+code" (the series of exits needed to escape the lost hills/woods)
+LDA $0098, which loads the accumulator with the direction Link is going (01:
+East, 02: West, 04: South, 08: North)
+LDY $00EB, which loads the Y-register with Link's current map
+location/coordinates. So, for example, 00 is the top-left corner, 1B is the
+location of the lost hills, and 61 is the location of the lost woods. 7F
+should be the bottom-right corner.
+
+753A: Lost Woods
+For the lost woods, the code run to check for movement starts at 753A. It
+first checks to see if the secret code's being followed (753A, CMP 7527,X); if
+it is, it checks to see if the whole code's been followed, as the X-register
+contains how many steps have been correctly followed already. If X is 3 (this
+is the 4th correct screen exit, meaning the secret code has been entered) it 
+goes to code at 756A. Otherwise, it increments a value at 052F, which is what 
+is read into X at the start of this subroutine; this is how it "counts up"
+through the secret code. It then stores the Y-register in EC ("map position to
+which Link's headed") and returns to B543. Note that at this point, Y has just
+loaded EB, which is the map position Link's already at. Storing this value in
+EC means Link's going straight back into the screen he already was (EB)
+
+754F: Lost Woods, secret code not followed
+If the code's not being followed, it first checks to see if Link's going East
+(01 is East, 02 West, 04 South, and 08 North; this value is in the
+accumulator, and was in 0098); East is the "safe exit" from the Lost Woods;
+regardless of Link's secret code input status, he can always leave to the
+east. This is code instruction 754F (CMP #$01); if he's headed east, it
+branches straight to a return. Otherwise, it calls a function at 7549, which
+resets 052F (how far Link is in the code); after returning at 7556, there's a
+BEQ instruction which should always succeed if coming from 754E, which takes
+the program to 7546, storing Y in EC (see above), then returning.
+
+756A: Lost woods, secret code entered completely; secret exit
+The program stores 04 in memory location 0602; probably related to the "puzzle
+solved" sound that plays. It then returns, meaning the location Link's headed
+to (stored in EC) is not changed, meaning Link will continue as normal, not
+forced to loop in the screen he's currently in.
+
+755C: Lost Hills
+If the program fails the Lost Woods check (7536: CPY #$61, 7538: BNE $7558),
+it goes to 7558, where a second check is immediately done for the Lost Hills
+(7558: CPY #$1B, 755A: BNE $7549). If it is the Lost Hills (screen 1B), code 
+starting at 755C is executed. First, whether or not the secret code is being followed
+is checked (755C: CMP $752B,X). If it is being followed, it branches to 7566.
+If it is not being followed, it checks to see if the "safe exit" (west) is
+being taken; if it is, it goes straight to a return. If it is not, it branches
+to 7553.
+
+7566: Lost hills, secret code being entered
+First, it checks to see if the whole code has been entered (7566: CPX #$03);
+if it is, it stores 4 in memory location 0602 (again, probably the "puzzle
+solved" sound), then returns, meaning Link goes in the direction he was
+headed. If it has not all been entered, it branches to code at 7543.
+
+7543: Lost hills, partial code input
+The program increments memory location 052F, which counts how far through the
+code has been input, meaning it has "counted" the correct input. It then
+stores Y (Link's current location) in memory location 00EC (where he's
+headed), meaning he'll loop back through his current screen. It then returns.
+
+7553: Lost hills, incorrect input, not safe exit
+The program first calls a function at 7549, which stores 00 in memory location
+052F, meaning it has "reset" how much of the code has been entered. It then
+(through a branch which should always succeed), stores Y in EC, meaning Link
+will loop back to the same screen.
+IMPORTANT NOTE: memory location 052F stores how far Link is through a "secret
+code". If he exits the "lost" screen, 052F actually isn't reset to 0, though
+it is reset to 0 if he enters the "lost" screen again, just as it's set to 0
+if he exits the screen through the wrong direction.
+
+The actual codes for traveling through the lost forest and lost hills are
+stored in RAM consecutively, starting at x7527 for the lost forest (08 02 04
+02) and x752B for the lost hills (08 08 08 08). These numbers represent the
+direction of travel for each step; 08 is north, 02 west, 04 south, and 01
+east; in the actual code, direction of travel is, for a time, stored in x0098
+in RAM
+
+Other discovery: it seems that some memory values around 0602 are used to call
+different sound effects; for example, setting 0602 to 04 makes the "puzzle
+solved" jingle, while putting 01 there plays the "file select" sound from the
+file select screen.
+
+Finding this code in the ROM: In order to change where the "lost" screens are,
+I must change the values stored in bytes 7537 (lost woods) and 7559 (lost
+hills) in RAM. In order to change their secret codes, I must change the bytes
+stored in 7527-752A (lost woods) and 752B-752E (lost hills) in RAM. In order
+to do that elegantly, I must figure out where the RAM is getting these values
+from ROM, since the only thing I want to change is the ROM. Notably, these
+values are almost certainly found together, as the codes appear right before
+the subroutine starting at 752F
+In the ROM, the secret codes are found at 06DA7-06DAA (lost woods) and
+06DAB-06DAE (lost hills). The map coordinates of the "lost" screens are found
+at 06DB7 (lost woods) and 06DD9. To change the secret codes, simply change the
+numbers in sequence; 08 is north, 04 is south, 02 is west, and 01 is east, and
+to change the screens they're on, simply change the number in the appropriate
+location, remembering that the high half-byte represents the row, and the low
+half-byte the column of that screen in the map.
+
+Quest Differences: Open Caves:
+Starting at x18690 in the rom is a bunch of map data; as before, each screen
+has one byte associated with it. The high two bits of each byte represent
+which quests the screen's cave is open in; if open in both, they are 0; if
+open in first quest, the lower of the two bits is 1; if open in second quest,
+the higher of the two bits is 1. If the screen has no cave ever, it also
+usually 00 for its cave marker, as it doesn't matter whether it's there since
+there is no tile to open regardless.
+As for the lower 6 bytes, I don't yet know.
+83 00		03 80
+00 A4		40 A4
+B3 62		B3 22
+
+2  b		b  2
+b  2		1  2
+2  1		2  b
+
+1000 0011  0000 0000		0000 0011  1000 0000
+0000 0000  1010 0100		0100 0000  1010 0100
+1011 0011  0110 0010        0110 0011  0010 0010
+
+Equipment/upgrades are around 660 in RAM
+657: sword (sword power; above 03 it becomes glitchy, tends not to affect
+beams)
+658: bombs (number of bombs)
+659: arrow (1-normal 2-silver)
+65A: bow (0/1)
+65B: candle (1-blue 2-red)
+65C: whistle (0/1)
+65D: bait (0/1)
+65E: potion (number of uses) (00-letter...how does it know if there is no
+letter?)
+65F: wand (0/1)
+660: raft (0/1)
+661: book (0/1)
+662: ring (fractional protection--1 blue, 2 red)
+663: ladder (0/1)
+664: magic key (0/1)
+665: power bracelet (0/1)
+66D: rupees (number)
+66E: keys (number)
+66F: hearts (high bit: number of containers; low bit: number of whole full
+hearts)
+671: triforce (each bit from low to high represents a triforce shard; ie 01=only
+first dungeon's triforce shard obtained)
+674: wooden boomerang (0/1)
+675: magic boomerang (0/1)
+676: magic shield (0/1)
+
+Address 049E handles collision. To enable noclip (you can't enter caves when
+noclip's on, untested in caves & dungeon, will make you return to start if you
+scroll vertically off edge of map), freeze address 049E to 26.
+
+Stuff to still determine:
+How does the B16 secret passage work? (It's not in the tile data).
+How do armos secrets work? (saw code comparing EB to $22 that's worth checking
+out.) (Note: probably less important that I discover this since Fred's already
+messed with this some, changing which Armos have caves and which has an item)
+How do I change the ladder coast heart container? (Fred has also messed with
+this, so it may be best to wait to work on this.)
+I think I understand rafts, but I still need to test that. Also, it might be
+nice to make more "raft screens", but that would require a lot of assembly
+hacking.
+Can I allow for more "ladder screens"? (Probably relatively unimportant)
+Related: can I simply make every screen a "ladder screen"?
+Can I allow for more whistle caves total in the game than there are in
+first+second quest? (Probably relatively unimportant).
+[Less important]: what do the last six bits of the "quest cave" bytes mean?
+(stored at x18690)
+
+In RAM, at memory location 00FA, the current status of controller 1 is stored.
+At memory location 00F8, which buttons have changed to "on" in the last
+frame is stored. (not completely accurate, actually) The 8 bits, in order, are:
+A B Select Start   U D L R
+The bytes immediately after these (00F9 and 00FB) do the same but for
+controller 2.
+
+Current direction of movement is stored in 03F8
+Memory Location 260 has F8 in it?
+Info on handling items/input: Handles B Button press starting at B2B3; 
+B Button subroutine is evidently 8E1C 0656 holds current item? If lower 
+4 bits of 0656 are 0, program instantly returns
+The value in 0656 is altered to form an offset to get two bytes from near
+8E1C: for the value being 05, the bytes taken are bytes 8E30 and 8E31, which
+together make an address: EF71, which the program jumps to
+Value 10 is stored in 0602, probably the whistle sound
+Current screen is loaded at instruction EF8A (LDA $00EB)
+
+Whistle Data:
+SUMMARY: Data from EF66-EF70 in RAM (1EF76-1EF80 in ROM) contains the screens on which there are
+whistle caves; only the 0th item (EF66) is for first quest, and the program
+uses this. If this is to be changed, assembly in subroutine EF71 must be
+changed. Since whistle caves always appear at the same point on the screen
+(row 5, column 6 [starting from 0]), there is no real additional work
+necessary. In fact, by changing memory location 0358 (assuming it's empty) to
+5E, I can cause the "spawn whistle cave" event whenever and wherever I want.
+Notably, all water becomes pathable, but only brown-palette water appears to
+dry up.
+To change how many whistle spots there are in quest when, I change instruction
+EF98 to CPY #$n, where n is the number of whistle spots in the quest, and I
+change EF9A to BPL instead of BNE, so only bytes EF99 and EF9A are changed.
+These can be found in the ROM at 1EFA9 and 1EFAA; they would be changed to [n
+where n is the number of whistle spots] and 10 [BPL opcode]
+
+A datastructure at EF66 is checked (precisely, byte EF70); The values starting
+at EF70 are accessed, counting down, in a loop. It is checked if any of them
+are equal to what is in the accumulator (42, here; the current screen value);
+if they are, the program will bounce out to EF98
+These values (EF66-EF70) are the screen numbers at which there are whistle
+caves (though only 42 is in first quest; all the others are second quest, and
+42 is not second quest). That means that the code starting at EF71 is a sort
+of "check whistle cave" subroutine. If the screen is not in the whistle cave
+screen list, the program jumps to EFB9 (technically it's a branch, but that branch
+shouldn't fail), which is probably the standard whistle-handling subroutine. 
+If it finds that the screen is on the list, it first checks to see if the
+value in the Y-Register (which has been used to count down) is 00. This is
+probably because only the 0th item on the list is in first quest; this is part
+of the quest check. Earlier in the subroutine, the accumulator was loaded with
+a value from 062E (at least this time), which is actually an offset of 062D; Y
+was loaded from a value stored in 0016, and Y is the offset; 062E could be
+quest info, since it's checked immeidately after the whistle cave screen list
+check.
+
+Ladder screens: certain screens allow use of the ladder, as in a dungeon. The
+screens are:
+B8, B9, B10, C8, E16, F16
+The in-game numbers for these screens are:
+17, 18, 19, 27, 4F, 5F
+These screens can be found in the rom listed at 1F21D-2C
+This can be found in RAM at F20D-F21B
+Changing them in the rom does change which screens the ladder can be used in.
+There is the important side factor that this implies that only 6 screens can
+actually be ladder-usable without changing a lot more in the rom.
+
+Raft screens: there are two screens in the game in which the raft is used.
+They are screens 55 and 3F. While on these screens (and not other screens),
+code at offset 8F76 is run every frame, which checks memory location 660
+(whether or not Link has the raft).
+When a screen is entered, code at 8941 is executed, which loads the current
+location (RAM: EB) into the accumulator, which is then compared against 3F and
+55; if either is equal to the current location, code at 894B is executed,
+which stores #$61 into 035A, which is later used to call the code which checks
+for whether or not Link has the raft. This may be all that needs to be changed
+to change which screens are raft screens. If this is the case, only two
+screens can be changed to raft screens without messing a ton with assembly.
+In RAM, the values that must be changed are 8944 and 8948. These are in ROM
+at: 14954 and 14958 (3F and 55, respectively). It's possible that there need
+to be other changes, too.
+May need to change RAM value 8F84 to one of the raft screens, as right now the
+instruction there compares the current location with #$55. This determines
+what value is in the accumulator (#$80 for screen 55 or #$60 for screen 3F),
+which gets compared with a value in memory location 0070. This is important
+because memory location 0070 is basically Link's x-position. The first value
+in it is effectively column number, so Link has x-position 80 when he's on the dock on
+screen 55, and x-position 60 when on the dock on screen 3F.
+y-position is stored at RAM location 84, which is used to determine if Link is
+in the right place for the raft to appear/disappear, I think. It is checked
+against both 7D and 3D in the "pre-raft" section (7D is the y-position of the
+dock; 3D probably the top of the screen) and does some stuff if either is
+equal to RAM 84. This results in the "rafting" code at 8FB0 being executed
+instead of the pre-raft code when this section is reached. As long as the
+rafting column doesn't change (which it probably shouldn't), these values/this
+area shouldn't need to change.
+In order to change the raft screens, only a few hard-coded values need to be
+changed [not yet tested]:
+ROM 14954/14958 (RAM 8944/8948): These need to be the screen values on which
+the raft is used (00 is top-left corner, 7F bottom-right).
+ROM 10F94 (RAM 8F84) must be one of the raft screen values, as described above. 
+The screen whose value is put here will be called "screen A" from now on.
+ROM 10F90/10F98 (RAM 8F80/8F88) must be the column numbers which contain the raft
+docks on the raft screens; the first value (10F90) must be the column number of the
+dock on screen A, and the second value (10F98) must be the column number of the
+dock on the other screen. Note that "column number" is actually expressed as
+"x0" where x is the column number (00 is all the way to the left, F0 all the
+way to the right)
+While it is possible to change the vertical position of the docks, this will
+apply to both screens if done; where the absolute value 7D is in this chunk of
+code, it must be replaced with whatever new vertical position is wanted (it is
+frequently compared with RAM value 0084)
+
+1F Secret Passage:
+On screen 1F there are two rock walls that Link can walk through; this only
+happens on that screen, those rock walls lead to the north edge of the screen
+and are a secret passage to screen 0F, which cannot be accessed otherwise.
+There is no difference in the tile data, but during checks made every frame on
+each overworld screen, at RAM location EE99 (assuming the right ROM bank is
+loaded), the current location (RAM location EB) is compared against 1F, and
+code starting after instruction EE9B up to EEB4 is only executed for screen
+1F.
+In order to change which screen it happens on, change
+ROM 1EEAA (RAM EE9A) to the appropriate screen value (in the original, it's 1F)
+In order to change which column it happens on, change
+ROM 1EEB6 (RAM EEA6) to the appropriate column value (x0 where x is the column
+number) (in the original, it's 80)
+In order to change which row it starts on, change
+ROM 1EEBC (RAM EEAC) to the appropriate starting row value (probably row number*10
++ 46) (in the original, it's 56)
+In order to change which direction it goes (from up to down), change
+ROM 1EEBD (RAM EEAD) from B0 (BCS) to 90 (BCC)
+In order to change to a leftward or rightward secret passage, change:
+ROM 1EEB6 (RAM EEA6) to the appropriate row value (xD where x is the row
+number, top row number is 3, so top row value would be 3D)
+ROM 1EEBC to the appropriate starting column value (probably column number *
+10)
+ROM 1EEBD to either B0 (BCS) for rightward secret passage or 90 (BCC) for
+leftward secret passage
+
+The 1F secret passage also plays the "puzzle solved" sound when screen 0F is
+entered. This should be changed even if there is no secret passage so that the
+sound doesn't play whenever 0F is entered. This is handled by code at EA89,
+where the current screen location (EB) is compared with #$0F (the "secret"
+screen number), and, if they are equal (and another condition I don't
+understand), the "puzzle solved" sound is played. In fact, the puzzle solved
+sound is played as long as the screen is entered from the overworld (not its
+cave); it just happens that the only way to enter it without hacking is via the
+secret passage.
+The following should be changed:
+ROM 1EA9C (RAM EA8C)
+	If there is no "secret screen", to some value between 80 and FF
+	If there is a "secret screen", to that screen's number.
+
+The following 96 lines are currently a bunch of bulk I recorded while trying to
+understand whistle caves. It is not currently useful
+{{The program makes some checks:
+If Y is 00 and the pulled accumulator value (discussed above, it's around 062D
+originally) is 00, it branches to another loop. If the acc is not zero, it
+branches to the "standard whistle" function (EFB9/EFBA). 
+If Y is not zero and the pulled accumulator value is, it branches to the
+standard whistle function; otherwise, it continues on to another loop.
+At the start of this loop section, it checks to see if the value at 051A is 0;
+if it's not, it instantly returns. (No idea what 051A is right now). If it
+continues, it starts a loop which iterates 9 times (using the Y register as
+the loop variable). If Y goes below zero, the program instantly returns,
+ending the loop. Inside the loop, it loads values from the 0350-0358 block
+(starting from higher numbers working downward) (EFAE: LDA $0350, Y). The loop
+stops if any one of these values is 0. If the loop ends this way, it stores
+the value 5E into whichever spot was 0 before. It then returns.
+
+Later, code at A140 loads the value out of 0358, and proceds to compare it to
+the values 68, 62, 65, and 66; of it is equal to one of them, they branch to
+A153, immediately afterward; otherwise (as this is 5E and not 68, 62, 65, or
+66), it branches out to A178. At A178, X is decremented, and if it is not 0,
+the program branches to A140. Essentially, this is checking all the 0350 block
+to see if they match this particular set of instructions. It should find that
+none of them match. Once it is done checking, it returns to where it checks
+0350 in particular.
+Code at ECE4 loads an indexed value from the 0350 block; it JSRs to FB74 when
+it finds that the first value is non-zero.
+Starting at FB82 is another such code segment, testing to see if the 0350
+block items are equal to 1E, 22, or less than 53. If any of those succeed, it
+stores 7 in a location in 0028-002F-ish.
+
+E5E2 block: point of interest
+We wind up here partially because the value 040E is 00; maybe a timer
+function? Should maybe keep tabs on that.
+It left-shifted , transfered to Y, and then incremented (in the Y-register) 5E
+(the value from 0358). That value is now being used as an offset in a LDA,
+which is ending up hitting $FC70 (which holds the value F4), indexing from
+$FBB3. This value is stored in $0002; Y is incremented to get the next value
+(FC71), which is stored in $0003; it contains FE. It then jumps to the address
+made by those values (FEF4). It loads 051A (appears above; still don't know
+what it does), sees if it is greater than 0C, in which case it would instantly
+return. Otherwise, it instantly returns if the last 3 bits of $0015 are not
+equal to #04. 
+The FEF4 code proceeds based on the value stored in $0015, which changes each
+frame. It seems like it's been incremented every frame, as its last 3 bits
+were first 6, then 7, then 0; it may be some sort of timer; I think it
+increments once every frame.
+Once it makes it past the condition at FEFF, it increments the value in 051A,
+and, if Y is 0B, branches to a later section starting at FF29. Otherwise, it
+pushes Y to the stack, loads 7 into it, and starts moving data from 8 data
+values at FEE0-7 to a block starting at 0302. It then pulls the Y value back
+from the stack (transfering it to Y; here it is 1), and stores in 0308 + Y
+(here 0309, where one of the values it just stored there is). Then, if Y is
+not equal to 0A, it returns; otherwise, it stores 99 in 034A before returning
+It stores a bunch of the 302-block values in the low 2000s
+So, every 8 frames, it writes some values from FEE0 to 0302 blocks, increments
+a value at 051A, which, once it hits 0A, will make 99 be stored at 034A. The
+values in the 0302 block also change between the block resetting them is run.
+Each time I get back to it. Each time the 0302-setting section is run, by 2
+frames later the water has changed color (screen 42).
+Once Y reaches 0B, a block of code starting at FF29 is run instead of the
+normal loop filling 0302-block. It then stores #60 in 70+X (79) and #90 in
+84+X (8D); right now, X is 09; interestingly, these values are already 60 and 90. It then
+JMP 8F32; X is loaded in ECDE (LDX 0340)
+At 8F32, LDA #70, then it calls 8EE0, then E6CE.
+In 8EE0, it calls E862, which almost immediately uses the values 70+X and
+84+X, storing them in 0003 and 0002 to be used probably in a JMP or JSR.
+Actually, it JSR 7570, which uses those values as arguments of sorts; it
+shifts them left a bunch, and/ors them with some stuff, resulting in changes
+to 0000 (22) and 0001 (4C)
+These values get stored in 0302+X and 0307+X (#22), and 0303+X (#4C) and
+0308+X (#4D); the last one gets incremented (X is 0); 0305, 0306, 030A, and
+030B get #70 stored in them (from 0005); then 030A: 72, 030B: 73, 0306: 71.
+0304, 0309: 82, 030C: FF; 0301: 0A
+The value at 0079 gets used again in subroutine ABC4 (called from E8C7); 
+The high half-bit gets shifted right twice, then used to access data relative
+to E400. (E400 + ((#F0 & $0079) >> 2)), which gets the values at E418 and
+E419, which are stored in 0000 and 0001 (resulting in 0000: 38 and 0001: 66). 
+The second value also gets used; it is anded with #F0, some more arithmetic is
+done with it, and it becomes 0A, at which point, JSR 7276, where it's added to
+0000, which, since we just set it, is 38; this is stored in 0000 (42)
+The frame after this happens, the stairs appear. I don't know how this
+happens.
+The "play puzzle solved sound" flag gets set at 8F34, which I think we jumped
+to. The program calls a subroutine at E6CE immediately afterward, which loads
+data from 6BAF and 6BB0, and we load the current screen into Y, which leads to
+loading data from a block of data starting at 067F (with screen offset 42,
+which loads the value at 06C1, which is 87); we then OR it with 80, turn
+around and store it right back. Maybe if it weren't already 87, this would
+mean something.
+At ED55, the current map location (42) is loaded into Y and used to access
+data in a (probably map) block stored at 687E (actual location: 68C0). This
+loads 63 into the accumulator. This is data mentioned early in this file
+dealing with palette data, some other stuff, and which column a cave is exited into (in this
+case, column 6); it is anded with 04, then shifted left three times; this
+isolates the "sea sound" bit from this data. (Note: 0603 more sound data? Set
+to 1, makes sea sound?)
+Current location loaded again at 86E0 for zora checking}}
+
+The maker of ZeldaTech mentions having issues changing the cave location on
+screen A1 (it caused graphical glitches on the sub screen); I tried changing
+it myself and had no such issues, so I don't know what caused his problems.
+
+
+Tracking down reliance on screen 44 for cave palette (for outer edge and text
+color)
+Made breakpoints for reading 68C2 and 6942 (outer and inner palette
+respectively in RAM)
+Break at RAM 83D8: [68C2 read]
+The outer palette is loaded into x in the next few instructions (it is anded
+with 3, so everything else is removed)
+
+Break at RAM 83E9: [6942 read]
+The inner palette is loaded into x in the next few instructions (it is anded
+with 3, so everything else is removed)
+
+The subroutine starting at 83D7 appears to be part of the "screen load" 
+subroutine. It is called whenever a new screen is entered, not just caves. It
+seems to set inner/outer palette, though it also seems to skip a few spots for
+the inner, which is a bit confusing.
+530-55F seems to represent the inner and outer palette somehow. brown seems to
+be FF, while green is AA; I don't know about gray or orange.
+539-53E, 541-546, and 549-54E are the inner palette
+551-556 is a mix of inner and outer palette (high bit: outer; low bit: inner)
+All others in this range are outer palette.
+Changing that subroutine is a bad idea.
+The important question here is to ask how the accumulator gets loaded with
+screen 44 when entering a cave. In the end, it really only needs to get loaded
+with a screen whose inner palette is green and whose outer is brown.
+It appears that prior to running the subroutine, the program jumps to location
+B16B, where the accumulator is loaded with 44 and the subroutine is called.
+Most likely, then, if I can change the value in B16C in RAM to any screen
+whose outer palette is brown and inner is green, I can load the correct colors
+in caves. In the base game, any fairy screen (like 39) should do it.
+The values around B16C in RAM appear around 1717C in the rom and likely
+nowhere else, so I plan to test changing that value to 39 to see if it fixes
+the colors.
+Also, aside from the code there switching out (it's a rom bank, after all) for
+certain effects (enemy deaths, rupee collection), it only seems to be used
+when entering a non-dungeon cave.
+After testing, it seems to work fine. My solution for now will probably be to
+make sure that there is at least one screen with brown outer and green inner
+palette, and that screen's number will be placed at 1717C in the rom to
+preserve cave coloring. Since fairy screens currently fit that requirement, it
+shouldn't be too bad.
+
+Checking Magic Book/Magic Wand stuffs
+03D0 block (03E2 specifically) entered while checking B Button stuff
+Also might check 98 block (AA specifically)
+F3D9: book is read at end of wand shot
+In order to do bombwand, must alter code from F3DE to F412 (RAM)
+Code is at 1f3ee-1f422 in ROM
+Should place an explosion at locations described by 7E (x) and 92 (y)
+In order to place explosion, must put 13 in BC; location is described by
+80 (x) and 94 (y)
+In order to make sound, must change 0603 to 10
+LDX #$10
+LDY #$0E
+LDA $0070, Y
+STA $70, X
+LDA $0084, Y
+STA $84, X
+LDA $0098, Y //Unsure about this and the following line; almost certainly
+STA $98, X   //have to do with direction of the attack
+LDA #$10
+STA $0603
+LDA #$13
+STA $BC
+LDX #$0E     //This is done at the end of the existing subroutine; likely
+			 //just maintains X register
+JMP $F855
+

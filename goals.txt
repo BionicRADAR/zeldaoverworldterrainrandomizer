@@ -1,0 +1,28 @@
+At each screen edge, walls must line up (if there is a wall on one side, there
+must be a wall on the other side). Defer to existing Legend of Zelda map for
+specifics on which walls fit.
+
+Biomes must be preserved.
+	Lakes must be contiguous/docks must line up
+	Coast must be along the map edge
+	Graveyard must be clustered
+	Mountain must be long and narrow
+	Transition areas should exist
+	Sub-areas should exist, too.
+	River must be contiguous/have a waterfall
+
+Lost Hills/forest must be dealt with
+	Hopefully figure out how to move them [done]
+	Figure out how to change the codes and provide hints for them [mostly
+done]
+	If cannot move them, work around their existence [know how to do]
+
+There must be enough cave entrances
+	Be able to require a certain number of "dungeon entrances"
+	Be able to guarantee a certain number of "open caves" that can be accessed
+without any additional items
+
+Problems:
+Deal with graphical glitches? [Currently cannot find one of them; other is
+understood and should be fine]
+Certain screens are repeats in the original rom.

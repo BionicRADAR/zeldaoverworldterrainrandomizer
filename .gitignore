@@ -1,0 +1,13 @@
+*.swp
+*~
+*.fas
+*.nes
+*.zip
+*.deb
+*.fas
+*.lib
+Zelda Editors*
+logs
+Biomes
+*.log
+zelda-display/Unnecessary*

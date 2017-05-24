@@ -1,0 +1,65 @@
+Issues with water:
+
+There are a number of uninverted, yet directional columns dealing with water.
+They are:
+53 left-side water at top, ends in bottom-left water corner, two rock walls at
+	bottom
+57 two rock walls at top, open space down to top-left corner into left water
+68 solid right water with bridge in middle
+69 solid left water--no bridge
+70 left-side water at top, bottom-left corner, then open space
+96 bushes at top, FOUR open spaces before top-right corner, right water
+99 bushes at top, TWO open spaces before top-left corner, left water
+180 rock wall down to top-left corner into normal water;
+	only used for the river's bend
+214 single-wide gap between rock wall and top-left corner, left water
+224 left water into normal water; only used in bottom-right corner coast
+
+Fortunately, some are used in only one screen
+	68 is only used for the lake bridge (and should be changed if lake bridge
+			is on other side (screen 55)
+	70 is only used at the southwest corner of the big lake, but, since where
+			open columns are changes, it is not so easily changed (screen 80)
+	99 is only used at northwest small lake (screen 85)
+	180 is only used for river's bend and should be changed to match the river
+			if possible (screen 22); its only shared tiles are its top 4, and
+			the only one that must be changed is the 5th tile
+	214 is only used as part of the coast cluster (screen 28)
+			due to its specialized use, may need to be repurposed;
+			no shared tiles, easy to repurpose
+	224 is only used in the bottom-left corner of the coast. It will need to
+			be changed if the coast does not cover the bottom right corner.
+
+Fortunately, 99 and 96 are also more or less inverts of each other, both being
+	water corners with trees above them.
+
+This leaves 53, 57, and 69 as potential obvious problems
+53 and 57 are problematic because of the non-existence problem they precede:
+	there is no top-right or bottom-right lake rock structure. Column 214
+	could be repurposed for one of them, but it's possible I may need
+	to keep track of what corners are needed and construct them as required.
+	This problem may also affect the coast depending on its shape.
+	Fortunately, 53 shares no tiles, but 57 unfortunately does
+69 should be matched to the coastline, since it's used most frequently there;
+	if there is no east or west coast, it can be matched to the lake and cause
+	no problems. If the lake bridge does not play well with the coast, then
+	it may just mean having a slightly ugly lake edge.
+
+70 could also cause a problem while adapting screens; may want to prevent the
+	southeast corner of a lake from being adapted.
+
+68 could be a problem since one of my backup coast plans involves a bridge;
+	could fix that problem by using scattered docks (a la the coast HC)
+	and not connecting to the land.
+
+214 shares no tiles with neighboring columns
+
+69 and 70 share 4 tiles, making changing it possible that changing them to
+match their surroundings might be impossible; since 69 is far more
+significant/obvious, may want to restrict which corner can have open ground to
+the south based on coastline location
+
+68 and 67 share 5 tiles; this creates an issue even though they are each only
+on one screen; the inverse version of 67 is at 225, which shares 6
+tiles with its predecessor, 224, which is also a potential "problem column",
+thanks to it being a coast corner.

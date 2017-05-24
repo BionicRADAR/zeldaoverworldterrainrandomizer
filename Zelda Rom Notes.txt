@@ -1,0 +1,344 @@
+Screens are generally numbered from 00 to 7F, where 00 is the top-left corner,
+0F is the top-right corner, 70 is the bottom-left corner, and 7F is the
+bottom-right corner.
+
+Screens (lists of columns) start at 0x15428 in rom
+In this map, screens A9, E3, E4, H11, and H14 are skipped, as they are identical
+to other screens (A9 and H11 to A7, E3 and E4 to D10, and H14 to H13)
+NOTE: Screens 121 and 122 represent cave insides (generic and take-any-road,
+respectively), and should not be changed! Screen 123 is a 2nd-quest only
+screen; it replaces dungeon 2, and is a unique "lake" screen, with a dead tree
+at either side instead of a couple of shrubs to either side. It can safely be
+changed.
+The bytes used here are a bit confusing. I've written a function to handle
+converting from these bytes to column number, but basically, treat the lower
+four bits as though they only run from 0-9, and occasionally when starting from
+0 on the low half-byte again (so, for example, from 18 to 20), there's an
+unused column number, so 20 refers to the column you'd think would be 19. It
+probably has something to do with how the tables of columns are organized and
+accessed, but I don't know for sure.
+
+The column contents start at 15BE8 in the rom and end at 15FAB; immediately
+following it is the location of the map when the ROM is loaded into RAM, 9418
+(middle-endian). Each byte of these columns are as follows:
+ABCD EFGH
+CDEFGH is the actual numeric representation of the tile
+B is whether or not that tile is doubled (for example, if there are two rock
+walls in a row, they can be doubled to save space)
+A represents whether or not that tile (or double-tile) is the start of a
+column, as columns can overlap each other to save space.
+So, for example, DB (1101 1011) is a column-starting, doubled rock wall (1B)
+
+In order to change the horizontal river tiles, you must change the following
+locations in the rom:
+15D8D is the start of the first horizontal river column. Its last tiles are
+the start of the next horizontal river column. The previous column ends before
+this one starts. It is the standard "high bottom" river tile.
+15D93 is the start of the second horizontal river column. Its first tiles are
+the start of the previous horizontal river column; it ends before the next
+column starts. It is the standard "low bottom" river tile.
+15E7C is the start of the third horizontal river column; it ends before the
+next column starts, but the previous column shares its last two tiles with
+this river column's first two (they are both rock walls and only take one byte
+in memory, byte 15E7C, which is DB in the original). It is recommended that
+this byte is not changed, as it will make the previous column look out of
+place where it tends to appear. This column is the "south exit" horizontal
+river column (only appears on screen C8 in the original)
+15F0B is the start of the fourth (and final) horizontal river column. It ends
+before the next column starts, and its previous column ends before it starts,
+so its tiles can be safely changed. This is the bombable wall horizontal river
+column; in the second quest, one such column hides level 8.
+
+
+Running from 18410 to 1848F (starting at 687E RAM) is one byte for each map 
+screen, containing:
+8 bits, ABCD EFGH
+G and H are the outer palette
+E is whether or not there is a zora on the screen
+F is whether or not the waves sound plays
+ABCD is the column number into which Link enters if he exits a cave in that
+screen.
+
+Starting at 18490 (immediately after the previous map data) to 1850f is a similar set
+of map data 
+ABCDEFGH:
+GH is the inner palette of that screen
+ABCDEF has to do with cave destinations; for example, if a cave on that screen
+goes to dungeon 1, ABCDEF will be 000001; the same goes for the rest of the
+dungeons, and even counts for dungeon entrances only used in second quest that
+simply can't be opened in first quest.
+
+These inner and outer palettes are as follows:
+00: gray (mostly used in graveyard screens)
+01: unused; orange/red
+02: green (used several places, notably eastern forest)
+03: brown (used many places, notably death mountain)
+
+In order to know which screen to load, the program looks at data stored in
+SRAM (the 6000-8000 block); starting at 69FE is a series of 128 bytes (one for
+each map position). The lower 7 bits of each byte represents which screen
+offset to load (so, for example, the first one is 00, screen 00's column list
+is 0 away from the start of the columns lists). Here, duplicate screens have the
+values associated with older screens (so 06 appears a couple times).
+The top bit has to do with whether or not mixed enemies appear on that screen.
+If they do, the bit is set; if the enemies are all of the same type, it is not
+set.
+This data can be found in the rom at #x18590 (my text file number) for 1st
+quest
+
+The Screen load subroutine is at A9F4
+
+00EB in RAM is Link's current map position
+
+Some memory values around 0602 are used to call
+different sound effects; for example, setting 0602 to 04 makes the "puzzle
+solved" jingle, while putting 01 there plays the "file select" sound from the
+file select screen.
+Value 10 is stored in 0602, probably the whistle sound
+
+In order to change where the "lost" screens are and how to traverse them, change:
+06DA7-06DAA and 06DAB-06DAE for the new "secret codes" (north: 08; south: 04;
+west: 02; east: 01); the codes run "forward", which is to say that the
+direction at 06DA7 must happen before 06DA8; this is the order you would
+expect.
+06DB7 (lost woods) and 06DD9 (lost hills) for their new locations; remember
+that a number from 80 to FF can be used to remove them from the map. Also
+remember that the first value there must correspond to the first secret code
+and the second to the second code.
+06DD0 (RAM 7550) (lost woods) and 06DE2 (RAM 7562) (lost hills) for the "safe exits".
+(north: 08; south: 04; west: 02; east: 01)
+The lost woods/lost hills is checked in a subroutine starting at 752F in RAM.
+
+Quest Differences: Open Caves:
+Starting at x18690 in the rom is a bunch of map data; as before, each screen
+has one byte associated with it. 
+ABCD EFGH:
+AB: represents which quests the cave is open in
+00: open in both (or there is no cave on that screen at all)
+01: open only in first quest
+10: open only in second quest
+CD: Not much data available, but it appears to be related to the location 
+of the stairs on any screen whose cave is opened by pushing some sort of
+block, either a grave or a rock 
+00 is the default, used for any screen which does not require it, and, for any
+screen that does, it means that the stairs are at column 5, row 3
+01 means that the stairs are in column 4, row 5 (counting from 0)
+10 means that the stairs are at column 9, row 5 (counting from 0)
+11 means that the stairs are at column 6, row 5 (counting from 0)
+The only screens in which CD are not 00: 09, 11, 1b, 20, 21, 23, 79
+These two bits seem to only be necessary if the screen's stairs are opened by
+pushing some sort of block, either a cave or a rock.
+E: Enemy entrance [set if they enter from the screen edges, cleared if not]
+FGH [?]: Link's exit row; row 0 is 1 down from the top, so not all
+			rows are valid
+
+Equipment/upgrades are around 660 in RAM
+657: sword (sword power; above 03 it becomes glitchy, tends not to affect
+beams)
+658: bombs (number of bombs)
+659: arrow (1-normal 2-silver)
+65A: bow (0/1)
+65B: candle (1-blue 2-red)
+65C: whistle (0/1)
+65D: bait (0/1)
+65E: potion (number of uses) (00-letter...how does it know if there is no
+letter?)
+65F: wand (0/1)
+660: raft (0/1)
+661: book (0/1)
+662: ring (fractional protection--1 blue, 2 red)
+663: ladder (0/1)
+664: magic key (0/1)
+665: power bracelet (0/1)
+66D: rupees (number)
+66E: keys (number)
+66F: hearts (high bit: number of containers; low bit: number of whole full
+hearts)
+671: triforce (each bit from low to high represents a triforce shard; ie 01=only
+first dungeon's triforce shard obtained)
+674: wooden boomerang (0/1)
+675: magic boomerang (0/1)
+676: magic shield (0/1)
+
+Address 049E handles collision. To enable noclip (you can't enter caves when
+noclip's on, untested in caves & dungeon, will make you return to start if you
+scroll vertically off edge of map), freeze address 049E to 26.
+
+Stuff to still determine:
+How do armos secrets work? (saw code comparing EB to $22 that's worth checking
+out.) (Note: probably less important that I discover this since Fred's already
+messed with this some, changing which Armos have caves and which has an item)
+How do I change the ladder coast heart container? (Fred has also messed with
+this, so it may be best to wait to work on this.)
+I think I understand rafts, but I still need to test that. Also, it might be
+nice to make more "raft screens", but that would require a lot of assembly
+hacking.
+Can I allow for more "ladder screens"? (Probably relatively unimportant)
+Related: can I simply make every screen a "ladder screen"?
+Can I allow for more whistle caves total in the game than there are in
+first+second quest? (Probably relatively unimportant).
+Can I have more than one 1F-style secret? (would be very annoying, probably
+lots of assembly hacking) I should probably also test this stuff to make sure
+I understand it.
+[Less important]: what do the last six bits of the "quest cave" bytes mean?
+(stored at x18690)
+
+In RAM, at memory location 00FA, the current status of controller 1 is stored.
+At memory location 00F8, which buttons have changed to "on" in the last
+frame is stored. (not completely accurate, actually) The 8 bits, in order, are:
+A B Select Start   U D L R
+The bytes immediately after these (00F9 and 00FB) do the same but for
+controller 2.
+
+Current direction of movement is stored in 03F8
+Info on handling items/input: Handles B Button press starting at B2B3; 
+B Button subroutine is evidently 8E1C; 0656 holds current item? If lower 
+4 bits of 0656 are 0, program instantly returns
+The value in 0656 is altered to form an offset to get two bytes from near
+8E1C: for the value being 05, the bytes taken are bytes 8E30 and 8E31, which
+together make an address: EF71, which the program jumps to
+Current screen is loaded at instruction EF8A (LDA $00EB)
+
+Whistle Data:
+SUMMARY: Data from EF66-EF70 in RAM (1EF76-1EF80 in ROM) contains the screens on which there are
+whistle caves; only the 0th item (EF66) is for first quest, and the program
+uses this. If this is to be changed, assembly in subroutine EF71 (1EF81 in
+ROM) must be changed. Since whistle caves always appear at the same point on the
+screen (row 5, column 6 [starting from 0]), there is no real additional work
+necessary. In fact, by changing memory location 0358 (assuming it's empty) to
+5E, I can cause the "spawn whistle cave" event whenever and wherever I want.
+Notably, all water becomes pathable, but only brown-palette water appears to
+dry up.
+To change how many whistle spots there are in quest one, I change instruction
+EF98 to CPY #$n, where n is the number of whistle spots in the quest, and I
+change EF9A to BPL (or probably BCS) instead of BNE, so only bytes EF99 and EF9A are changed.
+These can be found in the ROM at 1EFA9 and 1EFAA; they would be changed to [n
+where n is the number of whistle spots] and 10 [BPL opcode]
+
+RAM 062E might contain quest info
+
+Ladder screens: certain screens allow use of the ladder, as in a dungeon.
+These screens can be found in the rom listed at 1F21D-22
+This can be found in RAM at F20D-F212
+Changing them in the rom does change which screens the ladder can be used in.
+There is the important side factor that this implies that only 6 screens can
+actually be ladder-usable without changing a lot more in the rom.
+
+Raft screens: 
+There are two raft screens
+In order to change the raft screens, only a few hard-coded values need to be
+changed [not yet tested]:
+ROM 14954/14958 (RAM 8944/8948): These need to be the screen values on which
+the raft is used (00 is top-left corner, 7F bottom-right).
+ROM 10F94 (RAM 8F84) must be one of the raft screen values, as described above. 
+The screen whose value is put here will be called "screen A" from now on.
+ROM 10F90/10F98 (RAM 8F80/8F88) must be the column numbers which contain the
+raft docks on the raft screens; the first value (10F90) must be the column 
+number of the dock on screen A, and the second value (10F98) must be the column number of the dock on the other screen. Note that "column number" is actually expressed as "x0" where x is the column number (00 is all the way to the left, F0 all the way to the right)
+While it is possible to change the vertical position of the docks, this will
+apply to both screens if done; where the absolute value 7D is in this chunk of
+code, it must be replaced with whatever new vertical position is wanted (it is
+frequently compared with RAM value 0084)
+
+1F Secret Passage:
+On screen 1F there are two rock walls that Link can walk through; this only
+happens on that screen, those rock walls lead to the north edge of the screen
+and are a secret passage to screen 0F, which cannot be accessed otherwise.
+There is no difference in the tile data, but during checks made every frame on
+each overworld screen, at RAM location EE99 (assuming the right ROM bank is
+loaded), the current location (RAM location EB) is compared against 1F, and
+code starting after instruction EE9B up to EEB4 is only executed for screen
+1F.
+In order to change which screen it happens on, change
+ROM 1EEAA (RAM EE9A) to the appropriate screen value (in the original, it's 1F)
+In order to change which column it happens on, change
+ROM 1EEB6 (RAM EEA6) to the appropriate column value (x0 where x is the column
+number) (in the original, it's 80)
+In order to change which row it starts on, change
+ROM 1EEBC (RAM EEAC) to the appropriate starting row value 
+(probably row number*10 + 46) (in the original, it's 56)
+In order to change which direction it goes (from up to down), change
+ROM 1EEBD (RAM EEAD) from B0 (BCS) to 90 (BCC)
+In order to change to a leftward or rightward secret passage, change:
+ROM 1EEB6 (RAM EEA6) to the appropriate row value (xD where x is the row
+number, top row number is 3, so top row value would be 3D)
+ROM 1EEBC to the appropriate starting column value (probably column number * 10)
+ROM 1EEBD to either B0 (BCS) for rightward secret passage or 90 (BCC) for
+leftward secret passage
+
+The 1F secret passage also plays the "puzzle solved" sound when screen 0F is
+entered. This should be changed even if there is no secret passage so that the
+sound doesn't play whenever 0F is entered. This is handled by code at EA89,
+where the current screen location (EB) is compared with #$0F (the "secret"
+screen number), and, if they are equal (and another condition I don't
+understand), the "puzzle solved" sound is played. In fact, the puzzle solved
+sound is played as long as the screen is entered from the overworld (not its
+cave); it just happens that the only way to enter it without hacking is via the
+secret passage.
+The following should be changed:
+ROM 1EA9C (RAM EA8C)
+	If there is no "secret screen", to some value between 80 and FF
+	If there is a "secret screen", to that screen's number.
+
+The maker of ZeldaTech mentions having issues changing the cave location on
+screen A1 (it caused graphical glitches on the sub screen); I tried changing
+it myself and had no such issues, so I don't know what caused his problems.
+Whoever compiled the datacrystal LoZ rom map also complained of a similar
+issue, but with screen 03; I could not find the problem there either for some
+reason.
+
+I tested changing the palette of screen 0x44, and it did alter caves; it turns
+out that its palette data is used to load the caves' palettes.
+The short bit of code that is used to load 0x44 for the palette loading
+subroutine is at 1717B; 1717C contains the appropriate screen number, 0x44.
+In order to preserve cave palette, at least one screen on the map must have a
+brown outside and green inside (all fairy springs qualify), and one such
+screen's number must be placed at 1717C.
+
+From datacrystal.romhacking.net/wiki/The_Legend_of_Zelda:ROM_map:
+This site has a Legend of Zelda rom map. In it is the following relevant
+information:
+NOTE: The locations named here are not exactly the same as the ones I have
+found due to the header in the iNES format. The addresses I refer to are 16
+[0x10] bytes higher because I include the header, while the rom map does not.
+It is important to keep this in mind because I have to make sure that when my
+program changes values, it changes the right ones.
+10CC2: The screen where a statue hides a hidden item [Power Bracelet]
+10CB3-10CB8: The six screens where statues can hide secret stairways
+10CC9: Horizontal placement of item hidden by statue
+10CBA-10CBF: Horizontal placement of stairs hidden by statues
+10CE5: Vertical placement of stairs hidden by statues (presumably all the same
+		row; need to keep this in mind when making overworld)
+10D05: Item code for item hidden under statue [probably only Fred needs this]
+1788A: Item code for overworld heart container
+1788E: Horizontal position of the overworld heart container [no vertical?]
+1789A: Screen where overworld heart container is placed
+1815F-18165: 7 locations that change in 2nd quest (dungeon/cave entrance,
+non-border palette) (Bit 8 changes what enemies appear)
+18167-1816C: Define what those 7 locations change to in 2nd quest
+In 18400-1847F (Outer Palette+):
+18403: Changing cave exit location causes glitched graphics to appear when
+player opens the subscreen [This is screen A4. It should remain in column 7 to
+avoid problems] [I want to test this]
+18444: Changing outer palette makes caves white instead of dark brown. This is
+screen E5 [44]; for safety outer palette should remain brown. [I want to test
+this]
+In 18480-184FF (Inner Palette+):
+184C4: Changing inner from green changes the color of caves' text. Should stay
+the same, for safety. This is on screen E5 [44]. [I want to test this]
+18600-18632: Items in the various caves [shops, swords, heart containers,
+etc.]
+1865A-18676: Prices [from shops]/rewards [from secret to everybody]
+18680-186FF: Overworld map data: stair placement, quest secrets, Link's V
+placement, monster entry. See my section on 18690 for more info [that section,
+except for its understanding of the highest two bits, is informed by the rom
+map.]
+19328: Link's starting V position for the overworld (default 8D)
+1932F: 00 to 7F used to decide where Link starts in Hyrule (default 77)
+19333: "Level #" of overworld (default 00)
+19334-19337: four shortcuts on the overworld [take-any-road]
+	defaults are 1D, 23, 49, 79
+
+Note: If the 6th column in screen 46 is changed from 135 to 104 (which are, as
+far as I can tell, identical), I can gain full use of 135 to change to
+whatever I want, since it doesn't share any tiles with any other columns
