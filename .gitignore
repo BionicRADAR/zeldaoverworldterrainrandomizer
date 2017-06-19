@@ -11,5 +11,6 @@ logs
 Biomes
 *.log
 *.bin
+clean-rom.txt
 zeldadisplay/Unnecessary*
 zeldadisplay/output*
