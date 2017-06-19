@@ -1348,10 +1348,11 @@
 					(mark (connect-vertex-mark
 							(get-vertex-by-tile 
 							  vertex-array other
-							  (find-furthest-open-tile-in-column
-								(column-by-number
-								  (aref (get-arr2d screens other) choice))
-								(if (eq source-side 'top) 'bot 'top)))))
+							  `(,(find-furthest-open-tile-in-column
+								   (column-by-number
+								     (aref (get-arr2d screens other) choice))
+								   (if (eq source-side 'top) 'bot 'top))
+								,choice))))
 					(top (if (eq source-side 'top) other source))
 					(bot (if (eq source-side 'top) source other))
 					(edges1 (find-vert-exits (get-arr2d screens top) 'bot))

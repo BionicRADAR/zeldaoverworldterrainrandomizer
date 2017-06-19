@@ -13,9 +13,9 @@
 	(choose-stepladder-screens rom-array vertex-array screens base biomes
 							   horiz-edges vert-edges)
 	(write-lost-screens rom-array)
-	(write-palettes rom-array screens base biomes palettes)
 	(write-indoor-palette-loc rom-array biomes)
 	(write-stair-and-exit-info rom-array screens base)
+	(write-palettes rom-array screens base biomes palettes)
 	(write-whistle-info rom-array base biomes)
 	(write-raft-info rom-array screens horiz-edges vert-edges)
 	(write-secret-passage rom-array secret-passage) ;placeholder until secret
@@ -95,7 +95,24 @@
 
 (defun write-palettes (rom-array screens base biomes palettes)
   (write-outer-palettes rom-array screens base biomes palettes)
-  (write-inner-palettes rom-array palettes))
+  (write-inner-palettes rom-array palettes)
+  (fix-top-left-graphics-glitch rom-array screens base biomes palettes))
+
+(defun fix-top-left-graphics-glitch (rom-array screens base biomes palettes)
+  (let ((tl-outer (aref rom-array #x18410)))
+	(when (< tl-outer #x80)
+	  (remove-cave-from-screen (aref screens 0 0))
+	  (let ((new-out 
+			  (find-open-tile-in 
+				(aref screens 0 0)
+				(remove-if (lambda (x) (or (< (car x) 1) (< (cadr x) 8)))
+						   (get-coords-list 16 9)))))
+		(setf (aref rom-array #x18410)
+			  (+ (* (cadr new-out) 16)
+				 (mod (aref rom-array #x18410) 16)))
+		(setf (aref rom-array #x18690)
+			  (+ (* (floor (aref rom-array #x18490) 8) 8)
+				 (1- (car new-out))))))))
 
 (defun write-outer-palettes (rom-array screens base biomes palettes)
   (mapc (lambda (index coord)
@@ -111,17 +128,17 @@
 											small-lake spring)
 										  (get-arr2d biomes coord))
 							(not (member 'island (get-arr2d biomes coord)))
-							(not (numberp (get-arr2d screens coord)))
-							(some
-							  (lambda (col)
+							(or (numberp (get-arr2d screens coord))
 								(some
-								  (lambda (tile)
-									(member tile '(#x05 #x08 #x17 #x07 #x15 
-												   #x09 #x18 #x06 #x16)))
-								  col))
-							  (mapcar (lambda (col) (column-by-number col))
-									  (coerce (get-arr2d screens coord) 
-											  'list))))
+								  (lambda (col)
+									(some
+									  (lambda (tile)
+									    (member tile '(#x05 #x08 #x17 #x07 #x15 
+												       #x09 #x18 #x06 #x16)))
+								    col))
+							      (mapcar (lambda (col) (column-by-number col))
+									      (coerce (get-arr2d screens coord) 
+												  'list)))))
 					 #x8 0)
 				   (if (member 'coast (get-arr2d biomes coord))
 					 #x4 0)
@@ -229,6 +246,7 @@
 ;For now, makes it so the puzzle solved jingle doesn't play when you enter
 ;screen 0f
 (defun write-secret-passage (rom-array secret-passage)
+  (setf (aref rom-array #x1eeaa) #xff)
   (setf (aref rom-array #x1ea9c) #xff))
 
 (defun choose-stepladder-screens (rom-array vertex-array screens base biomes 

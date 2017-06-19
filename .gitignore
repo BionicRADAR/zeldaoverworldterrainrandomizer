@@ -10,4 +10,6 @@ Zelda Editors*
 logs
 Biomes
 *.log
-zelda-display/Unnecessary*
+*.bin
+zeldadisplay/Unnecessary*
+zeldadisplay/output*

@@ -38,3 +38,16 @@
 		  (mapcar (lambda (screen-coord) (get-arr2d screens screen-coord))
 				  (get-coords-list (array-dimension screens 1)
 								   (array-dimension screens 0))))))
+
+(defconstant +cave-replacements+
+			 '((16 . 2) (133 . 71) (210 . 2) (211 . 7)))
+
+(defun remove-cave-from-screen (screen)
+  (mapc (lambda (x)
+		  (let ((repl (cdr (assoc (aref screen x) +cave-replacements+))))
+			(when repl (setf (aref screens x) repl))))
+		(interval 0 (1- (length screen)))))
+
+(defun find-open-tile-in (screen coords)
+  (find-if (lambda (coord) (passable (get-tile-from-screen screen coord)))
+		   coords))

@@ -811,6 +811,7 @@
 		 (bad-neighbors '(spring open-ruin pond a-fairy)))
 	(remove-if (lambda (loc)
 				 (or
+				   (equal loc '(0 0))
 				   (some #'identity 
 					   (mapcar (lambda (biome) (member biome exclusive-biome-lst))
 							   (aref overworld-map (car loc) (cadr loc))))

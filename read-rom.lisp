@@ -13,7 +13,7 @@
 		  (loop repeat 16 do (format t "~2,'0x " (read-byte rom)))
 		  do (fresh-line))))
 
-(defun write-rom (outfile rom-fname)
+(defun write-human-readable-rom (outfile rom-fname)
   (with-open-file (*standard-output* outfile :direction :output
 									 :if-exists :supersede)
 	(read-rom rom-fname)))

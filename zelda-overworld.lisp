@@ -72,6 +72,12 @@
 				*vertical-edges*)
 	(make-palettes width height biomes *new-base-screens*
 				   (cadr (assoc 'grave *biome-coords-list*)))))
+
+(defun copy-new-screens (new-screens copy-loc)
+  (mapc (lambda (x)
+		  (set-arr2d copy-loc x (copy-seq (get-arr2d new-screens x))))
+		(get-coords-list (array-dimension new-screens 1)
+						 (array-dimension new-screens 0))))
 	
 (defun print-map (width height)
   (filter-screens-to-col-num *new-screens*)
