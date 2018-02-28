@@ -247,6 +247,8 @@ public class ZeldaDisplay {
 		if (args.length > 2) {
 			if (args[2].equals("-c"))
 				displayColumns(args[0], filename);
+			if (args[2].equals("-bc"))
+				displayByteColumns(args[0], filename);
 			return;
 		}	
 		Scanner s = null;
@@ -305,7 +307,120 @@ public class ZeldaDisplay {
 		System.out.println("Unrecognized palette: " + paletteName);
 		return brown;
 	}
-	
+
+	private static void displayByteColumns(String infile, String outfile) {
+		Scanner s = null;
+		try {
+			s = new Scanner(new File(infile));
+		} catch (FileNotFoundException e) {
+			System.out.println("Error: input file not found");
+			return;
+		}
+		int numColumns = s.nextInt();
+		int numTiles = s.nextInt();
+		String[] columnNums = new String[numColumns];
+		int[] tileNums = new int[numTiles];
+		boolean[] isOverlap = new boolean[numTiles];
+		for (int i = 0; i < numColumns; i++) {
+			columnNums[i] = s.next();
+		}
+		for (int i = 0; i < tileNums.length; i++) {
+			tileNums[i] = getNextInt(s);
+			isOverlap[i] = false;
+		}
+		output = new BufferedImage((tileOffset + 2) * 38 * scaling,
+								4 * 12 * tileWidth * scaling,
+								BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = output.createGraphics();
+		g.setColor(Color.white);
+		g.fillRect(0, 0, output.getWidth(), output.getHeight());
+		IntPair[] palette = getPalette("brown");
+		int tileBase = 0;
+		for (int column = 0; column < numColumns; column++) {
+			int vertBase = (column / 38) * 12 * tileWidth * scaling;
+			System.out.println(vertBase);
+			g.setColor(Color.black);
+			g.drawString(columnNums[column], (column % 38) * (tileOffset + 2) * scaling, vertBase + tileWidth * scaling);
+			int[] colTiles = new int[11];
+			boolean[] colOverlap = new boolean[11];
+			boolean[] colDouble = new boolean[11];
+			int colBreak = -1;
+			for (int j = tileBase + 1; j < numTiles; j++) {
+				if (tileNums[j] >= 0x80) {
+					colBreak = j;
+					break;
+				}
+			}
+			int tilePos = tileBase;
+			tileBase = colBreak;
+			for (int j = 0; j < 11; tilePos++) {
+				if (tilePos >= colBreak && colBreak > -1) {
+					isOverlap[tilePos] = true;
+				}
+				int tileTemp = tileNums[tilePos] % 0x40;
+				if (isOverlap[tilePos] == true) {
+					colOverlap[j] = true;
+				} else {
+					colOverlap[j] = false;
+				}
+				colTiles[j++] = tileTemp;
+				if (tileNums[tilePos] % 0x80 >= 0x40 && j < 11) {
+					if (isOverlap[tilePos] == true) {
+						colOverlap[j] = true;
+					} else {
+						colOverlap[j] = false;
+					}
+					colDouble[j - 1] = true;
+					colDouble[j] = true;
+					colTiles[j++] = tileTemp;
+				}
+				else {
+					colDouble[j - 1] = false;
+				}
+			}
+			for (int j = 1; j < 12; j++) {
+				int tile = colTiles[j - 1];
+				boolean overlap = colOverlap[j - 1];
+				boolean isDouble = colDouble[j - 1];
+				int dWidth = scaling * tileWidth;
+				int dLeft = (column % 38) * (tileOffset + 2) * scaling;
+				int dTop = j * dWidth + vertBase;
+				if (palette[tile] == null)
+					continue;
+				int sLeft = 1 + palette[tile].x() * tileOffset;
+				int sTop = 1 + palette[tile].y() * tileOffset;
+				g.drawImage(tiles, dLeft + scaling, dTop, 
+						dLeft + scaling + dWidth, dTop + dWidth,
+				    sLeft, sTop, sLeft + tileWidth, sTop + tileWidth, null);
+				if (overlap) {
+					g.setColor(new Color(0, 150, 0));
+				}
+				else {
+					g.setColor(Color.white);
+				}
+				g.fillRect(dLeft, dTop, scaling, dWidth);
+				if (isDouble) {
+					g.setColor(new Color(150, 0, 255));
+				}
+				else {
+					g.setColor(Color.white);
+				}
+				g.fillRect(dLeft + scaling + dWidth, dTop, scaling, dWidth);
+				if (isMutable(tile)) {
+					g.setColor(Color.red);
+					g.setStroke(new BasicStroke(scaling));
+					g.drawRect(dLeft + scaling - 1, dTop - 1, dWidth, dWidth);
+				}
+			}
+		}
+		try {
+			ImageIO.write(output, "png", new File(outfile));
+		} catch (IOException e) {
+			System.out.println("Error: failed to output image");
+			return;
+		}
+	}
+
 	private static void displayColumns(String infile, String outfile) {
 		Scanner s = null;
 		try {

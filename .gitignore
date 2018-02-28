@@ -14,3 +14,4 @@ Biomes
 clean-rom.txt
 zeldadisplay/Unnecessary*
 zeldadisplay/output*
+*.class
