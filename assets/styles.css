@@ -1,0 +1,167 @@
+header {
+	grid-row-start: 1;
+	grid-column-start: 1;
+	grid-column-end: 4;
+	text-align: center;
+}
+
+body {
+	background-color: #fcd8a8;
+}
+
+ul {
+	list-style-type: none;
+	padding-left: 15px;
+}
+
+.toc {
+	grid-column-start: 1;
+	grid-row-start: 2;
+	grid-row-end: -1;
+	width: 12vw;
+	position: sticky;
+	top: 0;
+	color: #ebebeb;
+	background-color: black;
+	border: 10px solid transparent;
+	border-image: url(textborder.png) 25% round;
+}
+
+.intro {
+	grid-column-start: 2;
+	grid-row-start: 2;
+}
+
+.inspiration {
+	grid-column-start: 2;
+	grid-row-start: 3;
+}
+
+.complications {
+	grid-column-start: 2;
+	grid-row-start: 4;
+}
+
+.maplevel {
+	grid-column-start: 2;
+	grid-row-start: 5;
+}
+
+.columnlevel {
+	grid-column-start: 2;
+	grid-row-start: 6;
+}
+
+.plan {
+	grid-column-start: 2;
+	grid-row-start: 7;
+}
+
+.ensureconnect {
+	grid-column-start: 2;
+	grid-row-start: 8;
+}
+
+.imperfections {
+	grid-column-start: 2;
+	grid-row-start: 9;
+}
+
+.conclusion {
+	grid-column-start: 2;
+	grid-row-start: 10;
+}
+
+.q1map {
+	grid-column-start: 3;
+	grid-row-start: 2;
+	align-self: start;
+}
+
+.samplemap {
+	grid-column-start: 3;
+	grid-row-start: 3;
+	align-self: start;
+}
+
+.q1mapscreennumbers {
+	grid-column-start: 3;
+	grid-row-start: 5;
+	align-self: start;
+}
+
+.basebytecolumns {
+	grid-column-start: 3;
+	grid-row-start: 6;
+	align-self: start;
+}
+
+.secondconnectedmap {
+	grid-column-start: 3;
+	grid-row-start: 7;
+	align-self: start;
+}
+
+.problemscreen {
+	grid-column-start: 3;
+	grid-row-start: 8;
+	align-self: start;
+}
+
+.oddladder {
+	grid-column-start: 3;
+	grid-row-start: 9;
+	align-self: start;
+}
+
+.sideimage {
+	display: block;
+	width: 29vw;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 5px;
+}
+
+.topcontainer {
+	display: grid;
+	grid-template-columns: 15vw 50vw 30vw;
+	grid-template-rows: auto;
+}
+
+.text {
+	color: #ebebeb;
+	background-color: black;
+	padding: 10px;
+	border: 10px solid transparent;
+	border-image: url(textborder.png) 25% round;
+	border-top: 0;
+	border-bottom: 0;
+}
+
+#introstart {
+	border-top: 10px solid transparent;
+}
+
+#imperfstart {
+	border-bottom: 10px solid transparent;
+}
+
+.capimage {
+	background-color: black;
+	color: #ebebeb;
+	width: 30vw;
+	margin-left: 2px;
+	margin-top: 4em;
+}
+
+.caption {
+	background-color: black;
+	color: #ebebeb;
+	font-size: 80%;
+	margin-left: 4px;
+	margin-right: 4px;
+}
+
+a.internal {
+	color: #ebebeb;
+}

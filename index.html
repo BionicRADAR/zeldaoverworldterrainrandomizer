@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<link rel="stylesheet" type="text/css" href="assets/styles.css">
+<meta charset="utf-8">
+<!--[if lt IE 9]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+<head>
+	<title>Zelda Overworld Terrain Randomizer</title>
+</head>
+<body>
+<div class="topcontainer">
+<header>
+	<h1>Zelda Overworld Terrain Randomizer</h1>
+	<h2>in Common Lisp</h2>
+</header>
+<div class="toc" id="toc">
+	<ul>
+		<li><a class="internal" href="#inspirstart">Inspiration</a></li>
+		<li><a class="internal" href="#complistart">Complications</a>
+			<ul>
+				<li><a class="internal" href="#maplevel">Map Level</a></li>
+				<li><a class="internal" href="#screenspecs">
+					Screen Level</a></li>
+				<li><a class="internal" href="#columnlevel">Column Level
+				</a></li>
+			</ul>
+		</li>
+		<li><a class="internal" href="#planstart">The Plan</a>
+			<ul>
+				<li><a class="internal" href="#biomes">Biomes</a></li>
+				<li><a class="internal" href="#edges">Edges</a></li>
+				<li><a class="internal" href="#columns">Columns</a></li>
+				<li><a class="internal" href="#screens">Screens</a></li>
+				<li><a class="internal" href="#adapt">Adapt</a></li>
+				<li><a class="internal" href="#ensure">Connect</a>
+				</li>
+				<li><a class="internal" href="#export">Export</a></li>
+			</ul>
+		</li>
+		<li><a class="internal" href="#imperfstart">Imperfections</a></li>
+		<li><a class="internal" href="#conclstart">Conclusion</a></li>
+	</ul>
+</div>
+<div class="intro text" id="introstart">
+<p style="-webkit-margin-before: 0;">
+The Zelda Overworld Terrain Randomizer takes a rom of <i>The Legend of Zelda</i>
+and shuffles up the overworld terrain to make new 
+overworld maps. The output is a rom that actually functions (though it isn't
+exactly an enjoyable game, as the dungeons, shops, and secrets have not been
+properly handled), and the program can also make an image of the overworld it
+generated.
+</p>
+<p> The program is written almost entirely in Common Lisp, but some parts of
+the map image creator are in Java due to its convenient image manipulation
+libraries.
+</p>
+<p>
+Instructions:
+<ol>
+	<li>Download the master branch</li>
+	<li>If you don't have it, get Common Lisp</li>
+	<li>Get a rom of the Legend of Zelda (US release, PRG0). Make sure it is 
+	unzipped, and put it in
+	the directory that holds "zelda-overworld.lisp"; name it "zelda-rom.nes"
+	</li>
+	<li>If you want to make a map image, make sure you have java installed
+	and runnable from the command line; then compile ZeldaDisplay.java
+	(enter "javac ZeldaDisplay.java" in the zeldadisplay directory)
+	<li>Run Common Lisp in a terminal in the directory that has 
+	"zelda-overworld.lisp"</li>
+	<li>Enter "(load zelda-overworld)" to load the program into the 
+	interpreter</li>
+	<li>Enter "(construct-overworld 16 8)" to make the map</li>
+	<li>To make the rom, enter "(make-rom filename)", where filename is
+	the name you want for the rom (you should end it with ".nes").</li>
+	<li>To make an image of the map, enter "(make-image filename)", where
+	filename is the output filename for the image (it should end with ".png").
+	</li>
+</ol>
+</p>
+</div>
+<div class="inspiration text" id="inspirstart">
+<h2>Inspiration</h2>
+<p>
+This project was inspired by the original 
+<a href="https://sites.google.com/site/zeldarandomizer/home">Zelda Randomizer project</a>, which provided the ability to regain the sense of adventure of early
+playthroughs of The original <i>Legend of Zelda</i> by shuffling up the game's 
+contents:
+dungeon locations, items, shops, money, dungeon layouts--nearly everything is
+shuffled up to provide a mostly new experience. It is successful and very fun.
+If you know <i>The Legend of Zelda</i> like the back of your hand, consider
+giving it a try. However, there is one thing it does not shuffle: while it
+shuffles up monsters, what caves lead to, and even hints, it does not change
+the overworld's terrain. Each screen is (barring second quest variations)
+always the same. The mountains are to the north, the coast is in the east,
+the lost woods are to the west, and so on. I wrote this program to change this,
+and it is moderately successful: it can actually shuffle up the overworld and
+make something reasonable.
+</p>
+</div>
+<div class="complications text" id="complistart">
+<h2>Complications</h2>
+<p>
+As might be expected of an NES game, many of its features are not particularly
+nice to work with: some amount of slogging through machine code was required,
+along with use of a debugger. The greatest difficulty, though, mostly comes
+from what are essentially space-saving measures: as might be expected from a
+128-kb game from 1986, there was a need to make everything as small as possible.
+A number of rather smart tricks were used to shrink down the size of the map, 
+but unfortunately all these tricks made this project more difficult.
+</p>
+<p>
+The game map itself is essentially structured at multiple levels as follows:
+</p>
+<ol>
+	<li><a class="internal" href="#maplevel">
+		The map level</a>: one number for each of the 128 screens that make 
+		up the map referencing a screen specification</li>
+	<li><a class="internal" href="#screenspecs">
+		The screen specifications</a>: one number for each of the screen's 16
+		columns referencing a column specification</li>
+	<li><a class="internal" href="#columnlevel">
+		The column level</a>: a mess of numbers that specify what tiles are 
+		in each column. Because the column level features a sort of simple 
+		compression method, this level is a bit more complex.
+	</li>
+</ol>
+</div>
+<div class="maplevel text">
+<h3 id="maplevel">The Map Level</h3>
+<p>
+The map level is pretty simple. There are a number of sets of 128 consecutive
+bytes used for map information (which makes sense, given that there are 128
+screens in the map). Some are relatively simple to handle, like the ones that
+handle what color palettes are used for a given screen. The concerning one,
+though, tells which screen goes where. The lower 7 bits in this 128-byte
+section (the high bit has to do with monster spawning) determine which screen
+specification fills which screen slot. This is in part important because while
+there are 128 screens in the map, some of them are duplicates, so there are
+in fact only 124 screen specifications, and 2 of them are reserved for specific
+underground areas. Since I wanted to mess with machine code as little
+as possible, this meant I had to replace things in-place, so I could
+only have 122 distinct screens in the game.
+</p>
+<h3 id="screenspecs">The Screen Specification Level</h3>
+<p>
+The map level references these screen specifications. There are 124
+screen specifications, each made up of 16 bytes, all in the same consecutive
+chunk of memory. Each of these bytes is a column number, referencing the
+columns section (which actually immediately follows this one). The most bizarre
+part of this section has to do with the way columns are numbered: for the most
+part, the column numbers count up as though they were decimal. They run from
+0-9, then 10-19, but they eventually reach A0-A9, but even that's not accurate,
+as some numbers are skipped. This is because the columns are stored in a rather
+compacted fashion, and I think (but have not confirmed) that the high four bits
+refer to a sort of "table location" in the columns section, while the lower
+four bits determine how many columns after that table location that column is.
+So, a table with particularly large column specifications might only have 9
+columns where most others would have 10.
+</p>
+<p>
+However, the truly difficult part was simply that screens were stored as lists
+of prebuilt columns, rather than a double array of tiles. This meant that
+altering screens to match new requirements was far more difficult, as it
+required replacing entire columns with other columns that already exist
+in the game, which made modifying screens a pain.
+</p>
+</div>
+<div class="columnlevel text">
+<h3 id="columnlevel">The Column Level</h3>
+<p>
+In one continuous section of
+memory, the game's 150 columns are specified, but the way they are specified is
+a bit odd. Columns are made up of tiles, and each tile has a 6-bit ID. So, for
+example, the cliff wall tile is 0x1B. This leaves 2 bits, which are used for
+special signals. The second-highest bit is a "doubler": if it is set, then 
+that byte actually represents two consecutive duplicates of the same tile
+(a double tile).
+The high bit is used to signal the start of a new column. However, this bit
+might be set for a byte in the middle of a column because columns can overlap
+each other.
+</p>
+<p>
+Here is where the trouble really compounds. There are only 150 columns in the
+game, but a randomizer could want many other columns not present, like, for
+example, the top-right corner of a body of water with a cliff wall above it.
+However, replacing columns (as I wanted to do everything in-place) was also
+difficult because I had to be careful about overlapping columns. Ultimately,
+this was all worked out, but it wasn't particularly easy.
+</p>
+</div>
+<div class="plan text" id="planstart">
+<h2>The Plan</h2>
+<p>
+I had at first considered relying on what would essentially be a sort of Markov
+chain generator to make screens, and while that might have worked, the results
+would have been subpar. I also would have had trouble maintaining any sort of
+guarantees, like a certain number of cave entrances or certain map features.
+In the end, a simple outline of the plan to generate an overworld looks as 
+follows:
+<ol>
+	<li><a class="internal" href="#biomes">Biomes</a>: In the new map, 
+	choose which screens will be part of which biomes</li>
+	<li><a class="internal" href="#edges">Edges</a>: In the new map, choose 
+	if and how screens will be connected to each other</li>
+	<li><a class="internal" href="#columns">Columns</a>: Alter the columns to 
+	include columns that will be required to fill the new map</li>
+	<li><a class="internal" href="#screens">Screens</a>: Place the game's 
+	original screens, categorized by the biomes 
+	they're a part of, into the new map based on the previous steps.</li>
+	<li><a class="internal" href="#adapt">Adapt</a>: Adapt the screens in the 
+	map so that they actually connect in 
+	the ways they're supposed to, as defined in the Edges step</li>
+	<li><a class="internal" href="#ensure">Ensure Connectedness</a>: Make sure 
+	everywhere can be reached</li>
+	<li><a class="internal" href="#export">Export</a>: Handle a number of 
+	small issues and export the new map to the rom</li>
+</ol>
+<p>
+As a general rule, anytime the program has to make a series of similar choices,
+for example placing a bunch of forest screens into the map, it does so in a
+grab bag fashion. It gathers all the things that must be filled, gets the full
+list of items that can fill them, then removes the items one at a time, putting
+them in place, until it runs out of either items or places to fill. If it runs
+out of items, it simply starts with a full list again. This ensures greater
+variety, as all possibilities are covered before any repetitions.
+</p>
+<h3 id="biomes">Biomes</h3>
+<p>
+If you look at the original Legend of Zelda map, you'll note that there are
+very clear terrain locations that span more than one screen, like the green
+forest in the east. In the parlance of Minecraft and its ilk, these are biomes. 
+I wanted my new map to reflect this feature of
+the original map--it is a good part of what I like about it. A map with a
+mountain screen in the middle of a hodge-podge of forest and woods is not
+be nearly so compelling. What's more, certain map features require some rather
+rigid rules for the screens in one area, like the big lake and its rivers.
+This part of the program decides what the biomes of each of the 128 screens
+of the new map will be. It starts from the large and rigid (the coast and
+big lake) and ends with the small and flexible (individual screens, like
+the fairy ponds).
+</p>
+<p>
+It is worth noting that most biomes have completely different rules for placing.
+Some are very rigid (the graveyard has to be 2x3 or 3x2), while some are less so
+(the forest starts by finding the biggest square it can make, then spreads
+out until it take up a certain number of screens).
+</p>
+<h3 id="edges">Edges</h3>
+<p>
+The program has to figure out which screens on the new map will be connected by
+deciding what the edges (in the parlance of graph theory) between the screens
+are.
+Generally
+speaking, edges are determined based on the biomes already in place and how
+frequently those biomes are connected to neighboring screens in the original 
+game. Certain screens require certain sets of edges: for example, the fairy
+pond screens require a connection to the south but no other connections.
+Additionally, the program has to keep track of certain special edges, like
+the dock connections between the mainland and the islands.
+</p>
+<p>
+When frequencies are used to decide how to place edges, the program first finds
+the original game's frequency for a type of edge: for example, horizontal edges
+between two mountain screens. It then multiplies that frequency by the number 
+of those edges in the new map, rounds up, and uses that number to determine
+how many of those edges to make "open", connecting the two screens by randomly
+drawing that many edges from all the edges in the relevant category in the new
+map.
+</p>
+<h3 id="columns">Columns</h3>
+<p>
+At this point in the program, the edges needed to fill in the map can be
+determined, and it is possible that many of them are not in the original game.
+This step attempts to fit as many desired columns as possible into the game's
+columns list. Help comes in the form of a couple of somewhat rare and
+potentially unnecessary columns (columns 68 and 87 are identical, and column D6
+has the same general purpose as 39 but is only used once) that can easily be
+replaced without much trouble. In some other cases,
+the need for one column means that another column almost certainly isn't
+needed, as is the case for column 44 and its flipped version: only one is
+ever needed for a given map. Additionally, since columns often overlap their 
+neighbors, some shuffling around is often necessary when trying to replace 
+certain columns. This is the case if a flipped version of column 44 is needed:
+if a flipped version of 44 is needed, a flipped version of 45 is also always
+needed, so the two essentially swap places to preserve columns 43 and 46.
+</p>
+<p>
+In order to keep track of which columns are actually usable, the program uses
+symbols instead of column numbers for any column which might not be in the
+same place at the end of this step (or that might not be in the list at all
+in the end). Later, these symbols will be replaced with the new column numbers
+as determined here; an association is kept between symbols and column numbers,
+as well as one between symbols and backup column options, in case there wasn't
+enough room for that column.
+</p>
+<h3 id="screens">Screens</h3>
+<p>
+After abandoning the Markov chain approach, I decided the best approach to
+getting something recognizably Zelda-like was to take the game's actual
+screens, shuffle them up, and then adapt them so that they connected properly.
+This section looks at the biomes on the map and drops a screen of the
+proper biome into each spot on the map. I also made some
+custom screens to fulfill special purposes that the game's original screens
+do not, like the southern coast "ladder bridges" you can see in the examples.
+</p>
+<p>
+This step also has to make sure to have enough duplicate screens in the map
+and mark them that way so that there aren't too many screen specifications
+needed at the end; otherwise, the program won't be able to simply swap out
+the screens in place in the rom.
+</p>
+<h3 id="adapt">Adapt</h3>
+<p>
+At this point, the program has to adapt the raw screens currently in the map
+to make them actually connect properly. If two screens are not connected,
+then this also has to be adapted so that their shared edge is blocked. This is
+done either by choosing one screen to adapt the other to, or, if that doesn't
+work, by simply choosing a way to connect them that works for both.
+</p>
+<p>
+Connecting vertically works very differently from connecting horizontally
+because the map is a list of columns. Vertical connections are created and
+removed by keeping track of an association between columns that aren't open
+at the edge and relevant replacements that are open and vice versa. Thus, to
+replace a column, a substitute is simply found and put in its place.
+</p>
+<p>
+Horizontal connections, on the other hand, are a good bit more difficult.
+Ultimately, as there are limited connecting columns in the game, I ended up
+making massive associations between the columns 3 away from the outside (so
+columns 2 and 13) and edge connections. When the results of this association are
+looked up, 2 columns are obtained which are used to replace the outermost
+2 columns. This allows the program to smooth out the transition to the actually
+connecting column with the extra column.
+</p>
+<p>
+This step also has to be careful not to alter any screen that is intended to
+be a duplicate screen, as otherwise the duplicate screen will no longer be
+a duplicate, adding just another wrinkle into this very difficult step.
+</p>
+</div>
+<div class="ensureconnect text">
+<h3 id="ensure">Ensure Connectedness</h3>
+<p>
+The edges step does some work to check this already, but there are some screens
+that are not entirely contiguous. These problem screens can take a map that is
+connected at the edge level and make it unconnected in reality.
+This step attempts to reconnect the map around these difficult
+screens. It's a rather fiddly step with a bunch of options to try, but even
+here the map generation can fail if it finds that none of the options work,
+forcing the program to start over.
+</p>
+<h3 id="export">Export</h3>
+<p>
+Finally, the finished map can be exported to a new rom. This step handles some
+small problems that aren't difficult to figure out but are pitfalls related
+to how the game handles the map. For example, the map has a number of different
+color palettes it can use when drawing tiles. Each screen actually has two
+palettes associated with it: an outer palette which covers a 2 tile wide border
+of the screen, and an inner palette which covers everything else. As this is
+mostly determined by the biome each screen is a part of, and the program
+has already determined the biomes, doing this isn't particularly difficult.
+There are also some other things that must be determined here, but none of
+them are quite so obvious, and none of them are that difficult to handle.
+</p>
+<p>
+At this point, the entire map is made and exported to a rom. Additionally,
+a java program can be called to make an image for the map; that's where I
+got the sample map images from. However, while you can run the rom, I would
+not suggest doing it except to see that it does in fact run simply because
+it won't be very fun, as the results are still rather imperfect.
+</p>
+</div>
+<div class="imperfections text" id="imperfstart">
+<h2>Imperfections</h2>
+<p>
+The core of the imperfections of the overworld terrain randomizer comes from
+the fact that it was inspired by the Zelda Randomizer. Essentially, I don't
+want to redo the work already done by the author of the Zelda Randomizer;
+I just want to provide new functionality that isn't yet in it. So, for
+example, rather than handling caves at all, this program instead just makes
+nearly all of them go to dungeon 1 (hence why I wouldn't suggest playing it).
+This allowed the resulting rom to be used, but it didn't redo the work
+already done by the Zelda Randomizer. The program also crashes sometimes
+(an error I haven't yet figured out). Certain screens also look weird, 
+most commonly because I
+flipped a screen, but there was no flipped version of a column to replace
+the one in the screen with. As a result, the maps (like the program) still have
+some jagged edges.
+</p>
+<p>
+I could fix these problems, but I wrote this program in Common Lisp because
+I'd just learned it and wanted to make sure I understood it. Common Lisp is
+a very enjoyable language, but the Zelda Randomizer is written in C++. Since
+I really just want the Zelda Randomizer to be able to do what this program
+does, I should really just be rewriting it in C++ so it can be a part of that
+project. It would also help to do some assembly hacking to see if I can abandon 
+the "in-place" requirement; being able to have all the columns and screens 
+I want would make this far easier.
+</p>
+<p>
+Unfortunately, I don't really know C++. On the bright side, I'm learning it,
+so I could start working on that fairly soon, and the motivation of making
+sure I really understand a language I've just learned is still relevant.
+</p>
+<p>
+I just hope it doesn't take as long.
+</p>
+</div>
+	<div class="q1map capimage">
+		<a class="imglink" href="assets/q1map.png" target="_blank">
+			<img class="sideimage" src="assets/q1map.png" />
+		</a>
+		<div class="caption">The original <i>Zelda</i> first quest overworld
+		</div>
+	</div>
+	<div class="samplemap capimage">
+		<a class="imglink" href="assets/sample-map.png" target="_blank">
+			<img class="sideimage" src="assets/sample-map.png" />
+		</a>
+		<div class="caption">An overworld generated by the randomizer</div>
+	</div>
+	<div class="q1mapscreennumbers capimage">
+		<a class="imglink" href="assets/q1mapwithscreennumbers.png" 
+			target="_blank">
+			<img class="sideimage" src="assets/q1mapwithscreennumbers.png" />
+		</a>
+		<div class="caption">
+			The original first-quest overworld with each
+			screen numbered; the number refers to which screen specification
+			goes in that spot on the map. Note, for example, that there are 
+			three screens labelled "06".
+		</div>
+	</div>
+	<div class="basebytecolumns capimage">
+		<a class="imglink" href="assets/basebytecolumns.png" target="_blank">
+			<img class="sideimage" src="assets/basebytecolumns.png" />
+		</a>
+		<div class="caption">
+			The game's original columns. Each column is numbered at the top. 
+			A green line at the left of a tile means that tile
+			is shared with a neighboring column. A purple line on the right
+			side of a tile means that tile is part of a double tile.
+		</div>
+	</div>
+	<div class="secondconnectedmap capimage">
+		<a class="imglink" href="assets/second-connected-map.png" 
+			target="_blank">
+			<img class="sideimage" src="assets/second-connected-map.png" />
+		</a>
+		<div class="caption">
+			Another overworld created by the randomizer.
+		</div>
+	</div>
+	<div class="problemscreen capimage">
+		<a class="imglink" href="assets/problemscreen.png" 
+			target="_blank">
+			<img class="sideimage" src="assets/problemscreen.png" />
+		</a>
+		<div class="caption">
+			One of the problematic split screens. As the walkable terrain is
+			not connected within the screen, it can create disconnections on
+			the map as a whole.
+		</div>
+	</div>
+	<div class="oddladder capimage">
+		<a class="imglink" href="assets/oddladder.png" target="_blank">
+			<img class="sideimage" src="assets/oddladder.png" />
+		</a>
+		<div class="caption">
+			An unfixed imperfection: the screen plays OK, but that ladder 
+			ought to have walls on its left side instead of just being open
+			there.
+		</div>
+	</div>
+</div>
+</body>
+</html>
