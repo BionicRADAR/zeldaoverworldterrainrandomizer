@@ -143,6 +143,17 @@
 (defun filter-screens-to-col-num (screens)
   (change-all-screen-columns screens #'filter-col-to-col-num))
 
+(defun filter-screens-to-col-num-nochange (screens)
+  (let ((new-screens (make-array '(8 16))))
+	(mapc (lambda (x)
+			(setf (aref new-screens (car x) (cadr x))
+				  (if (numberp (aref screens (car x) (cadr x)))
+					(aref screens (car x) (cadr x))
+				    (copy-seq (aref screens (car x) (cadr x))))))
+		  (get-coords-list 16 8))
+	(filter-screens-to-col-num new-screens)
+	new-screens))
+
 (defparameter *column-names*
   '((tl-tree . 99)
 	(tl-rock . 57)
@@ -625,10 +636,13 @@
 														   (cadr x))
 													 'dock)))
 								(get-coords-list 16 7))))
-	(when (some (lambda (x) (intersection (aref overworld-map (+ 2 (car x))
-												(cadr x))
-										  '(spring open-ruin a-fairy
-												island pond))) dock-coords)
+	(let ((x (find-if (lambda (y) (intersection (aref overworld-map 
+													  (+ 2 (car y))
+													  (cadr y))
+												'(spring open-ruin a-fairy
+														 island pond)))
+					  dock-coords)))
+	(when x
 	  (unless (use-unused-column (append '(#xc5 #x45 #x0B #x4e #x4e)
 										 (if (intersection
 											   '(forest woods)
@@ -643,7 +657,7 @@
 														   (cadr x)))
 									 '(#x59) '(#x1a))))
 		(remove-column-name 208)
-		(set-column-name 'dock-wall 208)))))
+		(set-column-name 'dock-wall 208))))))
 
 (defun alter-columns (overworld-map horizontals verticals)
   (init-column-alterer)

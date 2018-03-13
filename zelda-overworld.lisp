@@ -80,19 +80,35 @@
 						 (array-dimension new-screens 0))))
 	
 (defun print-map (width height)
-  (filter-screens-to-col-num *new-screens*)
+  (let ((num-screens (filter-screens-to-col-num-nochange *new-screens*)))
   (make-png "test-map" (interval 0 127)
 			(coerce (mapcar (lambda (x) 
 							  (if (numberp x) 
 								(aref +init-duplicate-screens+ x) x))
 							(mapcar (lambda (x)
-									  (aref *new-screens* (car x) (cadr x)))
+									  (aref num-screens (car x) (cadr x)))
 									(get-coords-list width height)))
 					'array)
 			#'new-column-by-number
 			(mapcar (lambda (x) 
 					  (get-arr2d *palettes* x))
 					(get-coords-list width height))
+			(mapcar (lambda (x) nil) (interval 0 127))
+			16 8 16 11)))
+
+(defun make-image (filename)
+  (make-png filename (interval 0 127)
+			(coerce (mapcar (lambda (x) 
+							  (if (numberp x) 
+								(aref +init-duplicate-screens+ x) x))
+							(mapcar (lambda (x)
+									  (aref *new-screens* (car x) (cadr x)))
+									(get-coords-list 16 8)))
+					'array)
+			#'new-column-by-number
+			(mapcar (lambda (x) 
+					  (get-arr2d *palettes* x))
+					(get-coords-list 16 8))
 			(mapcar (lambda (x) nil) (interval 0 127))
 			16 8 16 11))
 
@@ -108,11 +124,32 @@
 
 (defun alter-rom ())
 
+(defun make-rom-and-map (filename)
+  (randomize)
+  (let ((rom-filename (concatenate 'string filename ".nes")))
+	(make-image filename)
+	(make-rom rom-filename)))
+
+(defun make-rom-only (filename)
+  (randomize)
+  (make-rom (concatenate 'string filename ".nes")))
+
+(defun make-map-only (filename)
+  (randomize)
+  (make-image filename))
+
 (defun output-map-data ())
+
+(defun make-rom (filename)
+  (write-rom filename *new-screens*
+			 *new-base-screens* *biomes* 
+			 *connect-graph-array* *new-byte-columns* *palettes* 
+			 *horizontal-edges* *vertical-edges* *special-biome-identifiers* 
+			 nil))
 
 (defun randomize ()
   (handler-case (construct-overworld *mapwidth* *mapheight*)
-	('invalid-random-maximum-error () (randomize))))
+	(invalid-random-maximum-error () (randomize))))
 
 ;(defmacro pop-nth (lst n)
 ;  (multiple-value-bind (dummies vals new setter getter)

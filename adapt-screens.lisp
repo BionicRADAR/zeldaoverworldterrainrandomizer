@@ -854,7 +854,7 @@
 										 +vert-split-screen-replacements+)))
 					   (connect-vertex-mark
 						 (find-if (lambda (vert)
-									(intersection `((2 ,col) (8 ,col))
+									(intersection `((2 ,opt) (8 ,opt))
 												  (cdddr (connect-vertex-data
 														   vert))
 												  :test #'equal))
@@ -862,11 +862,11 @@
 					 nil)))
 			   (connect-horiz-split (horiz-info)
 				 (let ((other
-						 (remove-if (lambda (vert)
-									  (not (intersection 
+						 (find-if (lambda (vert)
+									  (intersection 
 											 (cdddr (connect-vertex-data vert))
 											 (caddr horiz-info)
-											 :test #'equal)))
+											 :test #'equal))
 									screen-vertices)))
 				   (if (and other
 							(intersection (cdddr (connect-vertex-data vertex))
@@ -982,7 +982,8 @@
   (let ((edge-priority '(dock bridge edge wall))
 		(simplified-vertex (make-connect-vertex 
 							 :data (subseq coord 0 2) :mark new-mark))
-		(vertices (get-arr2d vertex-array coord)))
+		(vertices (get-arr2d vertex-array coord))
+		(sub-coord (subseq coord 0 2)))
 	(if (listp vertices)
 	  (progn
 		(mapc 
@@ -990,7 +991,7 @@
 			(setf (connect-vertex-edges neighbor)
 				  (remove-if (lambda (edge)
 							   (equal (subseq (connect-edge-dest edge) 0 2)
-									  coord))
+									  sub-coord))
 							 (connect-vertex-edges neighbor))))
 		  (apply #'append
 				 (mapcar (lambda (coord)
@@ -1009,18 +1010,18 @@
 			   (simp-edges (simplify-screen-edges-to-vertex
 							 all-edges edge-priority)))
 		  (mapc (lambda (edge) 
-				  (push (make-connect-edge :source coord 
+				  (push (make-connect-edge :source sub-coord 
 										   :dest (connect-edge-dest edge)
 								   :kind (connect-edge-kind edge))
 						(connect-vertex-edges simplified-vertex))
 				  (push (make-connect-edge :source (connect-edge-dest edge) 
-										   :dest coord
+										   :dest sub-coord
 								   :kind (connect-edge-kind edge))
 						(connect-vertex-edges
 						  (get-vertex-by-data vertex-array 
 											  (connect-edge-dest edge)))))
 				simp-edges))
-		(set-arr2d vertex-array coord simplified-vertex))
+		(set-arr2d vertex-array sub-coord simplified-vertex))
 	  (setf (connect-vertex-mark vertices) new-mark))))
 
 
@@ -1588,9 +1589,6 @@
 		   (repair-external (vertex-sets source other new-mark)
 			 (let ((source-vertices (get-arr2d vertex-array source))
 				   (other-vertices (get-arr2d vertex-array other)))
-			   (format t "new: ~a; old: ~a" new-mark
-					   (connect-vertex-mark (get-vertex-by-data vertex-array
-																source)))
 			   (setf vertex-sets 
 					 (replace-all-marks 
 					   vertex-sets
@@ -1681,12 +1679,18 @@
 			 (let ((new-mark nil)
 				   (change-vert 
 					 (find-if (lambda (vert)
-								(setf new-mark
-									  (internal-connect vert vertex-array
+								(let ((result
+										(internal-connect vert vertex-array
 														(get-arr2d 
 														  screens
 													(connect-vertex-data vert))
 													biomes base)))
+								  (if result
+									(progn
+									  (unless new-mark 
+										(setf new-mark result))
+									  result)
+									nil)))
 							  (cdar (last vertex-sets)))))
 			   (if change-vert
 				 (progn
@@ -1723,8 +1727,7 @@
 						 (progn
 						   (princ 
 						"Error connecting partial screens; no options found")
-						   (error 
-							 'invalid-random-maximum-error :maximum 0))))))))))
+						   (mrandom 0))))))))))
 	(handle-one-set
 	  (mapcar (lambda (con-set)
 				(append `(,(connect-vertex-mark (car con-set))) con-set))

@@ -38,8 +38,8 @@
 		(duplicate-nums nil)
 		(current-index 0)
 		(width (array-dimension screens 1)))
-	(setf (aref out-screens 121) (aref *screens* 121))
-	(setf (aref out-screens 122) (aref *screens* 122))
+	(setf (aref out-screens 121) (copy-seq (aref *screens* 121)))
+	(setf (aref out-screens 122) (copy-seq (aref *screens* 122)))
 	(mapc (lambda (coord)
 			(when (eql current-index 121)
 			  (incf current-index 2))
@@ -312,7 +312,8 @@
 														  (car x) (cadr x))
 										     ,(south-edge horiz-edges vert-edges
 														  (car x) (cadr x)))))
-								    (member 'coast (get-arr2d biomes x)))))
+								    (member 'coast (get-arr2d biomes x))
+									(arrayp (get-arr2d screens x)))))
 								(get-coords-list (array-dimension base 1)
 												 (array-dimension base 0)))))
 	(let ((coord-choice (cond (left-bridge-coord left-bridge-coord)
@@ -334,7 +335,11 @@
 							  (t (mrandom 0)))))
 	  (write-byte-coord (array-dimension base 1) rom-array 
 						#x178aa coord-choice)
-	  (unless (eql (aref (get-arr2d screens coord-choice) 12) 18)
+	  (unless (eql (if (numberp (get-arr2d screens coord-choice))
+					 (nth 12
+						(aref +init-duplicate-screens+
+						   (get-arr2d screens coord-choice)))
+					 (aref (get-arr2d screens coord-choice) 12)) 18)
 		(setf (aref rom-array #x1789e) #x30))
 	  coord-choice)))
 
