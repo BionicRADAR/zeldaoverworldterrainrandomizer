@@ -14,13 +14,16 @@ ul {
 	padding-left: 15px;
 }
 
-.toc {
+.toc-column {
 	grid-column-start: 1;
 	grid-row-start: 2;
 	grid-row-end: -1;
 	width: 12vw;
-	position: sticky;
 	top: 0;
+	position: sticky;
+}
+
+.toc {
 	color: #ebebeb;
 	background-color: black;
 	border: 10px solid transparent;
@@ -144,6 +147,22 @@ ul {
 
 #imperfstart {
 	border-bottom: 10px solid transparent;
+}
+
+.titleimage {
+	width: 50vw;
+}
+
+.htitle {
+	color: #da0000;
+}
+
+h1.htitle {
+	font-size: 3em;
+}
+
+h2.htitle {
+	font-szie: 2em;
 }
 
 .capimage {

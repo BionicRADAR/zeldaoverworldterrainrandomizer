@@ -11,9 +11,11 @@
 <body>
 <div class="topcontainer">
 <header>
-	<h1>Zelda Overworld Terrain Randomizer</h1>
-	<h2>in Common Lisp</h2>
+	<img class="titleimage" src="assets/Zelda Rando title.png">
+	<h1 class="htitle">Overworld Terrain Randomizer</h1>
+	<h2 class="htitle">in Common Lisp</h2>
 </header>
+<div class="toc-column">
 <div class="toc" id="toc">
 	<ul>
 		<li><a class="internal" href="#inspirstart">Inspiration</a></li>
@@ -42,6 +44,7 @@
 		<li><a class="internal" href="#conclstart">Conclusion</a></li>
 	</ul>
 </div>
+</div>
 <div class="intro text" id="introstart">
 <p style="-webkit-margin-before: 0;">
 The Zelda Overworld Terrain Randomizer takes a rom of <i>The Legend of Zelda</i>
@@ -58,24 +61,24 @@ libraries.
 <p>
 Instructions:
 <ol>
-	<li>Download the master branch</li>
-	<li>If you don't have it, get Common Lisp</li>
+	<li>Download the <a href="https://github.com/BionicRADAR/zeldaoverworldterrainrandomizer/tree/master">master branch</a></li>
+	<li>If you don't have it, <a href="https://clisp.sourceforge.io/">get Common Lisp</a></li>
+	<li>Similarly, make sure <a href="https://java.com/en/download/">Java</a> is installed. Make sure both Common Lisp and Java can run from the command line. This may involve updating your system's path variable.</li>
 	<li>Get a rom of the Legend of Zelda (US release, PRG0). Make sure it is 
 	unzipped, and put it in
 	the directory that holds "zelda-overworld.lisp"; name it "zelda-rom.nes"
 	</li>
-	<li>If you want to make a map image, make sure you have java installed
-	and runnable from the command line; then compile ZeldaDisplay.java
+	<li>Compile ZeldaDisplay.java
 	(enter "javac ZeldaDisplay.java" in the zeldadisplay directory)
-	<li>Run Common Lisp in a terminal in the directory that has 
-	"zelda-overworld.lisp"</li>
+	<li>Run the Common Lisp interpreter in a terminal in the directory that has 
+	"zelda-overworld.lisp". To run the interpreter, simply enter "clisp" in the terminal</li>
 	<li>Enter "(load zelda-overworld)" to load the program into the 
 	interpreter</li>
-	<li>Enter "(construct-overworld 16 8)" to make the map</li>
-	<li>To make the rom, enter "(make-rom filename)", where filename is
-	the name you want for the rom (you should end it with ".nes").</li>
-	<li>To make an image of the map, enter "(make-image filename)", where
-	filename is the output filename for the image (it should end with ".png").
+	<li>To make a rom and a map for it, enter "(make-rom-and-map filename)", where filename.nes is the name of the output rom, and filename.png is the name of the output map.<br />
+	To make only the rom, enter "(make-rom filename)", where filename.nes is
+	the name for the output rom.<br />
+	To make only a map, enter "(make-map-only filename)", where
+	filename.png is the output filename for the image.
 	</li>
 </ol>
 </p>
@@ -84,19 +87,19 @@ Instructions:
 <h2>Inspiration</h2>
 <p>
 This project was inspired by the original 
-<a href="https://sites.google.com/site/zeldarandomizer/home">Zelda Randomizer project</a>, which provided the ability to regain the sense of adventure of early
+<a href="https://sites.google.com/site/zeldarandomizer/home">Zelda Randomizer</a>, which provides the ability to regain the sense of adventure of early
 playthroughs of The original <i>Legend of Zelda</i> by shuffling up the game's 
 contents:
 dungeon locations, items, shops, money, dungeon layouts--nearly everything is
-shuffled up to provide a mostly new experience. It is successful and very fun.
+shuffled up to provide a mostly new experience.
 If you know <i>The Legend of Zelda</i> like the back of your hand, consider
 giving it a try. However, there is one thing it does not shuffle: while it
 shuffles up monsters, what caves lead to, and even hints, it does not change
 the overworld's terrain. Each screen is (barring second quest variations)
 always the same. The mountains are to the north, the coast is in the east,
-the lost woods are to the west, and so on. I wrote this program to change this,
-and it is moderately successful: it can actually shuffle up the overworld and
-make something reasonable.
+the lost woods are to the west, and so on. I wrote the overworld terrain randomizer to specifically randomize what the Zelda Randomizer does not,
+and it does actually shuffle up the overworld and
+make a fairly reasonable overworld.
 </p>
 </div>
 <div class="complications text" id="complistart">
@@ -116,9 +119,11 @@ The game map itself is essentially structured at multiple levels as follows:
 <ol>
 	<li><a class="internal" href="#maplevel">
 		The map level</a>: one number for each of the 128 screens that make 
-		up the map referencing a screen specification</li>
+		up the map referencing a screen specification. There are other, 
+		similar map-level areas that alter other factors (like the color
+		of the screen), but they were not a major problem.</li>
 	<li><a class="internal" href="#screenspecs">
-		The screen specifications</a>: one number for each of the screen's 16
+		The screen specifications</a>: one byte for each of the screen's 16
 		columns referencing a column specification</li>
 	<li><a class="internal" href="#columnlevel">
 		The column level</a>: a mess of numbers that specify what tiles are 
@@ -148,7 +153,7 @@ only have 122 distinct screens in the game.
 The map level references these screen specifications. There are 124
 screen specifications, each made up of 16 bytes, all in the same consecutive
 chunk of memory. Each of these bytes is a column number, referencing the
-columns section (which actually immediately follows this one). The most bizarre
+columns section (which actually immediately follows this one in the rom). The most bizarre
 part of this section has to do with the way columns are numbered: for the most
 part, the column numbers count up as though they were decimal. They run from
 0-9, then 10-19, but they eventually reach A0-A9, but even that's not accurate,
@@ -187,7 +192,9 @@ game, but a randomizer could want many other columns not present, like, for
 example, the top-right corner of a body of water with a cliff wall above it.
 However, replacing columns (as I wanted to do everything in-place) was also
 difficult because I had to be careful about overlapping columns. Ultimately,
-this was all worked out, but it wasn't particularly easy.
+this was all worked out, but it wasn't particularly easy, and this setup meant
+that sometimes a column that would have been nice to have had to be replaced
+for a workable, but less ideal option.
 </p>
 </div>
 <div class="plan text" id="planstart">
@@ -197,6 +204,11 @@ I had at first considered relying on what would essentially be a sort of Markov
 chain generator to make screens, and while that might have worked, the results
 would have been subpar. I also would have had trouble maintaining any sort of
 guarantees, like a certain number of cave entrances or certain map features.
+I instead came to the conclusion that the best course of action would be to use
+the screens in the original map as building blocks to create the new map. This
+brought with it additional difficulties, but I think it does a better job of
+making an overworld that doesn't feel machine generated and that can potentially
+maintain certain guarantees.
 In the end, a simple outline of the plan to generate an overworld looks as 
 follows:
 <ol>
@@ -223,7 +235,7 @@ for example placing a bunch of forest screens into the map, it does so in a
 grab bag fashion. It gathers all the things that must be filled, gets the full
 list of items that can fill them, then removes the items one at a time, putting
 them in place, until it runs out of either items or places to fill. If it runs
-out of items, it simply starts with a full list again. This ensures greater
+out of items, it simply starts with the full list of options again. This ensures greater
 variety, as all possibilities are covered before any repetitions.
 </p>
 <h3 id="biomes">Biomes</h3>
@@ -234,7 +246,7 @@ forest in the east. In the parlance of Minecraft and its ilk, these are biomes.
 I wanted my new map to reflect this feature of
 the original map--it is a good part of what I like about it. A map with a
 mountain screen in the middle of a hodge-podge of forest and woods is not
-be nearly so compelling. What's more, certain map features require some rather
+nearly so compelling. Additionally, certain map features require some rather
 rigid rules for the screens in one area, like the big lake and its rivers.
 This part of the program decides what the biomes of each of the 128 screens
 of the new map will be. It starts from the large and rigid (the coast and
@@ -269,9 +281,13 @@ how many of those edges to make "open", connecting the two screens by randomly
 drawing that many edges from all the edges in the relevant category in the new
 map.
 </p>
+<p>
+Finally, a graph search is done to make sure all screens are connected in some
+way at this point, as otherwise there would be unreachable screens in the game.
+</p>
 <h3 id="columns">Columns</h3>
 <p>
-At this point in the program, the edges needed to fill in the map can be
+At this point in the program, the columns needed to fill in the map can be
 determined, and it is possible that many of them are not in the original game.
 This step attempts to fit as many desired columns as possible into the game's
 columns list. Help comes in the form of a couple of somewhat rare and
@@ -279,7 +295,7 @@ potentially unnecessary columns (columns 68 and 87 are identical, and column D6
 has the same general purpose as 39 but is only used once) that can easily be
 replaced without much trouble. In some other cases,
 the need for one column means that another column almost certainly isn't
-needed, as is the case for column 44 and its flipped version: only one is
+needed, as is the case for column 44 and its flipped version (which isn't in the original game): only one is
 ever needed for a given map. Additionally, since columns often overlap their 
 neighbors, some shuffling around is often necessary when trying to replace 
 certain columns. This is the case if a flipped version of column 44 is needed:
@@ -324,7 +340,7 @@ Connecting vertically works very differently from connecting horizontally
 because the map is a list of columns. Vertical connections are created and
 removed by keeping track of an association between columns that aren't open
 at the edge and relevant replacements that are open and vice versa. Thus, to
-replace a column, a substitute is simply found and put in its place.
+replace a column, an appropriate substitute is simply found and put in its place.
 </p>
 <p>
 Horizontal connections, on the other hand, are a good bit more difficult.
@@ -367,7 +383,7 @@ them are quite so obvious, and none of them are that difficult to handle.
 </p>
 <p>
 At this point, the entire map is made and exported to a rom. Additionally,
-a java program can be called to make an image for the map; that's where I
+a Java program can be called to make an image for the map; that's where I
 got the sample map images from. However, while you can run the rom, I would
 not suggest doing it except to see that it does in fact run simply because
 it won't be very fun, as the results are still rather imperfect.
@@ -383,9 +399,10 @@ I just want to provide new functionality that isn't yet in it. So, for
 example, rather than handling caves at all, this program instead just makes
 nearly all of them go to dungeon 1 (hence why I wouldn't suggest playing it).
 This allowed the resulting rom to be used, but it didn't redo the work
-already done by the Zelda Randomizer. The program also crashes sometimes
-(an error I haven't yet figured out). Certain screens also look weird, 
-most commonly because I
+already done by the Zelda Randomizer. Additionally, due to the slightly random
+nature of the overworld terrain randomizer, it has been difficult to hunt down
+all its remaining bugs, some of which cause it to crash. 
+Certain screens also look weird, most commonly because I
 flipped a screen, but there was no flipped version of a column to replace
 the one in the screen with. As a result, the maps (like the program) still have
 some jagged edges.
@@ -394,7 +411,7 @@ some jagged edges.
 I could fix these problems, but I wrote this program in Common Lisp because
 I'd just learned it and wanted to make sure I understood it. Common Lisp is
 a very enjoyable language, but the Zelda Randomizer is written in C++. Since
-I really just want the Zelda Randomizer to be able to do what this program
+I really just want the original Zelda Randomizer to be able to do what this program
 does, I should really just be rewriting it in C++ so it can be a part of that
 project. It would also help to do some assembly hacking to see if I can abandon 
 the "in-place" requirement; being able to have all the columns and screens 
