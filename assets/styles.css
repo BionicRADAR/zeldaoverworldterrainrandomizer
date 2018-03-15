@@ -5,6 +5,14 @@ header {
 	text-align: center;
 }
 
+a:visited {
+	color: green;
+}
+
+a:link {
+	color: #007cff;
+}
+
 body {
 	background-color: #fcd8a8;
 }

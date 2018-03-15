@@ -98,17 +98,23 @@ giving it a try. However, there is one thing it does not shuffle: while it
 shuffles up monsters, what caves lead to, and even hints, it does not change
 the overworld's terrain. Each screen is (barring second quest variations)
 always the same. The mountains are to the north, the coast is in the east,
-the lost woods are to the west, and so on. I wrote the overworld terrain randomizer to specifically randomize what the Zelda Randomizer does not,
-and it does actually shuffle up the overworld and
-make a fairly reasonable overworld.
+the lost woods are to the west, and so on. I really wanted the randomizer
+to be able to randomize that, too, so I figured I should try to write a program
+to do that myself.
+Thus, I wrote the overworld terrain randomizer to specifically randomize 
+what the Zelda Randomizer does not, and it actually does a reasonable job of
+shuffling up the overworld.
 </p>
 </div>
 <div class="complications text" id="complistart">
 <h2>Complications</h2>
 <p>
 As might be expected of an NES game, many of its features are not particularly
-nice to work with: some amount of slogging through machine code was required,
-along with use of a debugger. The greatest difficulty, though, mostly comes
+nice to work with. Along the way, I spent a great deal of time slogging through
+machine code and using a debugger to find what I needed to change. (This was
+I before I discovered that much of the work of exploring the rom had already
+been done and <a href="https://datacrystal.romhacking.net/wiki/The_Legend_of_Zelda:ROM_map">posted online.</a>)
+However, the greatest difficulty mostly comes
 from what are essentially space-saving measures: as might be expected from a
 128-kb game from 1986, there was a need to make everything as small as possible.
 A number of rather smart tricks were used to shrink down the size of the map, 
@@ -143,7 +149,7 @@ handle what color palettes are used for a given screen. The concerning one,
 though, tells which screen goes where. The lower 7 bits in this 128-byte
 section (the high bit has to do with monster spawning) determine which screen
 specification fills which screen slot. This is in part important because while
-there are 128 screens in the map, some of them are duplicates, so there are
+there are 128 screens in the map, some of them are duplicates. So there are
 in fact only 124 screen specifications, and 2 of them are reserved for specific
 underground areas. Since I wanted to mess with machine code as little
 as possible, this meant I had to replace things in-place, so I could
@@ -154,7 +160,7 @@ only have 122 distinct screens in the game.
 The map level references these screen specifications. There are 124
 screen specifications, each made up of 16 bytes, all in the same consecutive
 chunk of memory. Each of these bytes is a column number, referencing the
-columns section (which actually immediately follows this one in the rom). The most bizarre
+columns section (which actually immediately follows this section in the rom). The most bizarre
 part of this section has to do with the way columns are numbered: for the most
 part, the column numbers count up as though they were decimal. They run from
 0-9, then 10-19, but they eventually reach A0-A9, but even that's not accurate,
@@ -166,11 +172,11 @@ So, a table with particularly large column specifications might only have 9
 columns where most others would have 10.
 </p>
 <p>
-However, the truly difficult part was simply that screens were stored as lists
-of prebuilt columns, rather than a double array of tiles. This meant that
-altering screens to match new requirements was far more difficult, as it
-required replacing entire columns with other columns that already exist
-in the game, which made modifying screens a pain.
+However, the truly difficult part was simply that screens are stored as lists
+of prebuilt columns, rather than a double array of tiles. This means that
+altering screens to match new requirements is far more difficult, as it
+requires replacing entire columns with other columns that already exist
+in the game, which makes modifying screens a pain.
 </p>
 </div>
 <div class="columnlevel text">
@@ -236,7 +242,7 @@ for example placing a bunch of forest screens into the map, it does so in a
 grab bag fashion. It gathers all the things that must be filled, gets the full
 list of items that can fill them, then removes the items one at a time, putting
 them in place, until it runs out of either items or places to fill. If it runs
-out of items, it simply starts with the full list of options again. This ensures greater
+out of items, it simply replenishes the full list of options again. This ensures greater
 variety, as all possibilities are covered before any repetitions.
 </p>
 <h3 id="biomes">Biomes</h3>
@@ -285,11 +291,13 @@ map.
 <p>
 Finally, a graph search is done to make sure all screens are connected in some
 way at this point, as otherwise there would be unreachable screens in the game.
+If there are disconnected groups, the program connects them.
 </p>
 <h3 id="columns">Columns</h3>
 <p>
 At this point in the program, the columns needed to fill in the map can be
-determined, and it is possible that many of them are not in the original game.
+determined, and it is possible that many of those columns are not in the 
+original game.
 This step attempts to fit as many desired columns as possible into the game's
 columns list. Help comes in the form of a couple of somewhat rare and
 potentially unnecessary columns (columns 68 and 87 are identical, and column D6
@@ -332,7 +340,8 @@ the screens in place in the rom.
 <p>
 At this point, the program has to adapt the raw screens currently in the map
 to make them actually connect properly. If two screens are not connected,
-then this also has to be adapted so that their shared edge is blocked. This is
+then this also has to be adapted so that their shared edge is blocked. Adapting
+screens together is
 done either by choosing one screen to adapt the other to, or, if that doesn't
 work, by simply choosing a way to connect them that works for both.
 </p>
@@ -378,13 +387,15 @@ color palettes it can use when drawing tiles. Each screen actually has two
 palettes associated with it: an outer palette which covers a 2 tile wide border
 of the screen, and an inner palette which covers everything else. As this is
 mostly determined by the biome each screen is a part of, and the program
-has already determined the biomes, doing this isn't particularly difficult.
+has already determined the biomes, doing this isn't particularly difficult, but
+it still needs to be taken care of.
 There are also some other things that must be determined here, but none of
 them are quite so obvious, and none of them are that difficult to handle.
 </p>
 <p>
 At this point, the entire map is made and exported to a rom. Additionally,
-a Java program can be called to make an image for the map; that's where I
+a Java program I wrote for this project can be called to make an image for the 
+map; that's where I
 got the sample map images from. However, while you can run the rom, I would
 not suggest doing it except to see that it does in fact run simply because
 it won't be very fun, as the results are still rather imperfect.
@@ -395,7 +406,7 @@ it won't be very fun, as the results are still rather imperfect.
 <p>
 The core of the imperfections of the overworld terrain randomizer comes from
 the fact that it was inspired by the Zelda Randomizer. Essentially, I don't
-want to redo the work already done by the author of the Zelda Randomizer;
+want to redo the work already done by the Zelda Randomizer;
 I just want to provide new functionality that isn't yet in it. So, for
 example, rather than handling caves at all, this program instead just makes
 nearly all of them go to dungeon 1 (hence why I wouldn't suggest playing it).
@@ -403,8 +414,8 @@ This allows the resulting rom to be used, but it doesn't redo the work
 already done by the Zelda Randomizer. Additionally, due to the slightly random
 nature of the overworld terrain randomizer, it has been difficult to hunt down
 all its remaining bugs, some of which cause it to crash. 
-Certain screens also look weird, most commonly because I
-flipped a screen, but there was no flipped version of a column to replace
+Certain screens also look weird, most commonly because the program
+flipped a screen, but there is no flipped version of a column to replace
 the one in the screen with. As a result, the maps (like the program) still have
 some jagged edges. The program also currently doesn't handle some of the cool
 secrets in the original game, like the secret walk-through wall into the
