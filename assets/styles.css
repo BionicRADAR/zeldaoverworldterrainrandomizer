@@ -18,8 +18,8 @@ ul {
 	grid-column-start: 1;
 	grid-row-start: 2;
 	grid-row-end: -1;
-	width: 12vw;
 	top: 0;
+	margin-right: 10px;
 	position: sticky;
 }
 
